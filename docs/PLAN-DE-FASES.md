@@ -74,7 +74,8 @@ Entregables:
 - `docs/ESTADO-ARIS-2.0.md` con el inventario del entorno.
 - `docs/AGENTES-DISPONIBLES.md` con lo verificado (no lo deseado).
 - Decisión de stack registrada (`ADR-002`).
-- Repositorio Git local inicializado, sin remoto ni push.
+- Repositorio Git local inicializado y publicado en `origin` (público) con autorización del
+  usuario.
 
 Puerta F0: entorno verificado, carpeta aislada, stack decidido o bloqueo explícito.
 

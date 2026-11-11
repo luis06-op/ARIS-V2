@@ -16,7 +16,8 @@ instrucción del usuario pide un repositorio llamado **ARIS-V2**.
 - **Ubicación:** `/home/luis/Proyectos/github/ARIS-V2`, junto a los demás proyectos del
   espacio de trabajo, en carpeta nueva y aislada.
 - **Rama principal:** `main`.
-- **Remoto:** ninguno. No hay push, ni repositorio público, ni licencia elegida.
+- **Remoto:** `origin` → `https://github.com/luis06-op/ARIS-V2` (**público**, rama `main`),
+  creado con autorización expresa del usuario el 11 de noviembre de 2026. Licencia sin definir.
 
 `PROJECT_ROOT` se descubre siempre desde el entorno; no se codifica la ruta absoluta en código,
 pruebas, configuración ni scripts.

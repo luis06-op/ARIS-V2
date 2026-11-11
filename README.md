@@ -12,6 +12,8 @@ entregó, cuándo, por quién, contra qué guía y qué versión exacta se revis
 > al finalizar una entrega: conserva su historia, sus revisiones y su contexto para que
 > pueda seguir aportando a la institución».
 
+Repositorio: <https://github.com/luis06-op/ARIS-V2> · Estado: ver `docs/ESTADO-ARIS-2.0.md`.
+
 ## Estado actual del repositorio
 
 Este repositorio contiene **la base documental y la preparación técnica de las fases F0 y

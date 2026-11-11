@@ -18,7 +18,7 @@ Inventario real de la sesión de creación. Nada de esta tabla es supuesto.
 | Sistema operativo | CachyOS Linux (Arch-based), kernel de escritorio |
 | Directorio del proyecto | `/home/luis/Proyectos/github/ARIS-V2` |
 | Aislamiento | Carpeta nueva, fuera de cualquier otro repositorio; no es enlace simbólico |
-| Git | 2.56.0 · repositorio inicializado en rama `main`, sin remoto |
+| Git | 2.56.0 · rama `main` · remoto `origin` público: `github.com/luis06-op/ARIS-V2` |
 | PHP | 8.2.12 (NTS) — `/home/luis/.local/bin/php` → `/opt/lampp/bin/php` |
 | php.ini cargado | `/opt/lampp/etc/php.ini` |
 | Extensiones PHP | `pdo_mysql`, `mysqli`, `mbstring`, `openssl`, `fileinfo`, `intl`, `zip`, `gd`, `curl`, `sqlite3` presentes |
@@ -44,7 +44,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | ADR-002 | Stack objetivo Laravel 13/PHP 8.3; **bloqueo**: solo hay PHP 8.2.12 y no hay Composer | `docs/decisions/ADR-002-stack-y-version-php.md` |
 | ADR-003 | Evidencias en disco privado local, servidas por controlador autorizado | `docs/decisions/ADR-003-almacenamiento-privado.md` |
 | ADR-004 | Versionado inmutable con `UNIQUE (padre_id, version_number)` y bloqueo transaccional | `docs/decisions/ADR-004-versionado-inmutable.md` |
-| ADR-005 | Directorio `ARIS-V2`, producto «ARIS 2.0», sin remoto ni publicación | `docs/decisions/ADR-005-nombre-y-ubicacion.md` |
+| ADR-005 | Directorio `ARIS-V2`, producto «ARIS 2.0», repositorio público en `origin` | `docs/decisions/ADR-005-nombre-y-ubicacion.md` |
 
 ## 3. Implementado
 
@@ -88,7 +88,8 @@ a tocar otros proyectos.
 - **Stack (B2):** Laravel 12 hoy vs. actualizar PHP y usar Laravel 13.
 - **PI-001…PI-010** (`docs/product/DECISIONES-INSTITUCIONALES.md`): ninguna se implementa con
   valores por defecto inventados.
-- **Publicación del repositorio:** no hay remoto, ni push, ni licencia elegida.
+- **Publicación del repositorio:** publicado como público en `github.com/luis06-op/ARIS-V2`
+  con autorización del usuario; **licencia aún sin definir**.
 
 ## 7. Siguiente objetivo concreto
 
