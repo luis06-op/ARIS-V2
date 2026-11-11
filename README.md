@@ -97,10 +97,15 @@ se validarán al cerrar la puerta F1.
 
 - `docs/PLAN-DE-FASES.md` — qué se construye en cada fase y cómo se aprueba.
 - `docs/product/VISION-Y-ALCANCE.md` — propósito, alcance del MVP y exclusiones.
-- `docs/product/DECISIONES-INSTITUCIONALES.md` — las 10 políticas pendientes.
+- `docs/product/DECISIONES-INSTITUCIONALES.md` — las 11 políticas pendientes.
 - `docs/architecture/INVARIANTES.md` — lo que el sistema no puede permitir.
 - `docs/ESTADO-ARIS-2.0.md` — punto de entrada para retomar el trabajo.
 
-## Licencia
+## Titularidad y licencia
 
-Pendiente de decisión institucional. No se publica bajo ninguna licencia todavía.
+La obra es **titularidad del SENA** (Servicio Nacional de Aprendizaje, Colombia), año 2026.
+No se concede licencia de uso, copia, modificación ni distribución sin autorización escrita
+del SENA. Ver `AVISO-DE-DERECHOS.md`, `docs/decisions/ADR-006-titularidad-sena.md` y la
+decisión pendiente `PI-011` (autorización de publicación pública).
+
+La disponibilidad pública del repositorio **no constituye** licencia de uso.

@@ -45,6 +45,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | ADR-003 | Evidencias en disco privado local, servidas por controlador autorizado | `docs/decisions/ADR-003-almacenamiento-privado.md` |
 | ADR-004 | Versionado inmutable con `UNIQUE (padre_id, version_number)` y bloqueo transaccional | `docs/decisions/ADR-004-versionado-inmutable.md` |
 | ADR-005 | Directorio `ARIS-V2`, producto «ARIS 2.0», repositorio público en `origin` | `docs/decisions/ADR-005-nombre-y-ubicacion.md` |
+| ADR-006 | Titularidad del SENA; sin licencia permisiva mientras no se autorice por escrito | `docs/decisions/ADR-006-titularidad-sena.md` |
 
 ## 3. Implementado
 
@@ -52,7 +53,9 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
   operación y despliegue.
 - Modelo de dominio, ERD del núcleo académico (21 tablas propias + tablas del framework),
   diccionario de datos e invariantes con pruebas previstas.
-- Catálogo `PI-001…PI-010` de decisiones institucionales pendientes.
+- Catálogo `PI-001…PI-011` de decisiones institucionales pendientes (incluye titularidad y
+  publicación del código, `PI-011`).
+- `AVISO-DE-DERECHOS.md`: titularidad del SENA, sin licencia de uso concedida.
 - Brief de diseño y checklist de QA visual preparados (no ejecutados: Antigravity y Playwright
   no están disponibles).
 - `.gitignore`, `.gitattributes`, `.editorconfig`, `.env.example` sin secretos.
@@ -88,8 +91,9 @@ a tocar otros proyectos.
 - **Stack (B2):** Laravel 12 hoy vs. actualizar PHP y usar Laravel 13.
 - **PI-001…PI-010** (`docs/product/DECISIONES-INSTITUCIONALES.md`): ninguna se implementa con
   valores por defecto inventados.
-- **Publicación del repositorio:** publicado como público en `github.com/luis06-op/ARIS-V2`
-  con autorización del usuario; **licencia aún sin definir**.
+- **Publicación del repositorio:** público en `github.com/luis06-op/ARIS-V2` con autorización
+  del usuario. Titularidad declarada del **SENA** (`AVISO-DE-DERECHOS.md`, ADR-006); la
+  confirmación institucional de la publicación pública es `PI-011`. **Sin licencia de uso.**
 
 ## 7. Siguiente objetivo concreto
 

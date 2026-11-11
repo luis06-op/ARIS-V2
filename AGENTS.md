@@ -14,6 +14,8 @@ contradice una política institucional aprobada, gana la política aprobada.
 - **Aislamiento:** este repositorio es independiente. No comparte base de datos, archivos,
   credenciales ni configuración con proyectos anteriores del equipo. Esos proyectos son,
   como máximo, de solo lectura y están **fuera de alcance**.
+- **Titularidad:** la obra pertenece al **SENA**. No se aplica ninguna licencia permisiva ni se
+  aceptan contribuciones externas sin autorización escrita. Ver `AVISO-DE-DERECHOS.md`.
 
 ## 2. Reglas de autonomía
 

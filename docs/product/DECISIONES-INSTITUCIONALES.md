@@ -202,6 +202,29 @@ admite video?
 
 ---
 
+## PI-011 — Titularidad y publicación del código
+
+**Pregunta:** ¿autoriza el SENA que el código y la documentación de ARIS 2.0 se mantengan en un
+repositorio **público** y bajo qué condiciones (licencia, aceptación de contribuciones, uso por
+terceros)?
+
+**Por qué importa:** la obra es titularidad del SENA. Un repositorio público sin licencia no
+cede derechos, pero puede generar confusión y no permite contribuciones externas legítimas.
+
+**Alternativas:**
+1. Mantener el repositorio público con aviso de derechos y sin licencia (situación actual,
+   recomendada solo como transición).
+2. Publicar bajo una licencia institucional definida por el SENA.
+3. Restringir el repositorio a privado hasta que exista formalización.
+
+**Recomendación:** obtener confirmación escrita; si no llega, pasar a la opción 3.
+**Impacto si no se decide:** no se aceptan contribuciones externas, no se declara reutilización
+permitida y el repositorio no se usa como base de productos de terceros.
+**Estado:** PENDIENTE — decisión del usuario ya registrada (titularidad SENA, repositorio
+público); falta la formalización institucional.
+
+---
+
 ## Registro de aprobaciones
 
 | PI | Estado | Fecha | Responsable | Observaciones |
@@ -216,3 +239,4 @@ admite video?
 | PI-008 | PENDIENTE | — | — | — |
 | PI-009 | PENDIENTE | — | — | — |
 | PI-010 | PENDIENTE | — | — | — |
+| PI-011 | PENDIENTE | — | — | Titularidad SENA declarada; falta formalizar publicación pública |

@@ -22,7 +22,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const RAIZ = process.cwd();
-const OBJETIVO = ['README.md', 'AGENTS.md', 'docs'];
+const OBJETIVO = ['README.md', 'AGENTS.md', 'AVISO-DE-DERECHOS.md', 'docs'];
 const EXTENSIONES = new Set(['.md', '.markdown']);
 const PATRON_ENLACE = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const PATRON_RUTA_MD = /`([A-Za-z0-9_./-]+\.md)`/g;
