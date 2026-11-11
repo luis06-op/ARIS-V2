@@ -1,0 +1,59 @@
+# --- Laravel / PHP ---
+/vendor/
+/bootstrap/cache/*.php
+/storage/*.key
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+
+# --- Entorno y secretos ---
+.env
+.env.backup
+.env.production
+.env.local
+/config/*local*.php
+/auth.json
+
+# --- Node / Vite ---
+/node_modules/
+/public/build/
+/public/hot
+/public/storage
+npm-debug.log*
+yarn-error.log*
+
+# --- Almacenamiento privado y artefactos académicos ---
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/app/*.sqlite
+
+# --- Sistema operativo y editores ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# --- Herramientas de agentes ---
+/.opencode/
+/opencode.json
+/AGENT-*.md
+/.agents/
+
+# --- Artefactos de empaquetado y respaldos locales ---
+/dist/
+/builds/
+*.zip
+*.tar.gz
+*.sql
+*.dump
+!/database/**/*.sql
