@@ -67,17 +67,22 @@ con la tarea segura siguiente.
 ## 5. Verificación mínima antes de cada commit
 
 ```bash
-# 1. Sintaxis PHP (cuando exista código)
-find app database routes config tests -name '*.php' -print0 2>/dev/null \
-  | xargs -0 -r -n1 php -l
+# 0. En este equipo: PHP de ARIS es php8.4 y Composer es local.
+PHP=php8.4
+COMPOSER="php8.4 $HOME/.local/bin/composer"
 
-# 2. Pruebas (cuando exista suite)
-php artisan test
+# 1. Sintaxis PHP
+find app database routes config tests -name '*.php' -print0 2>/dev/null \
+  | xargs -0 -r -n1 $PHP -l
+
+# 2. Pruebas
+$PHP artisan test
 
 # 3. Tipos y estilo del frontend (cuando exista)
 npm run typecheck && npm run lint
 
-# 4. Nada sensible versionado
+# 4. Documentación y nada sensible versionado
+node scripts/verificar-enlaces-docs.mjs
 git status --short
 ```
 

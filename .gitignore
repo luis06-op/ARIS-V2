@@ -8,9 +8,8 @@
 
 # --- Entorno y secretos ---
 .env
-.env.backup
-.env.production
-.env.local
+.env.*
+!.env.example
 /config/*local*.php
 /auth.json
 
@@ -32,6 +31,7 @@ yarn-error.log*
 /storage/logs/*
 !/storage/logs/.gitignore
 /storage/app/*.sqlite
+/database/*.sqlite
 
 # --- Sistema operativo y editores ---
 .DS_Store
@@ -42,12 +42,22 @@ desktop.ini
 .idea/
 .vscode/
 !.vscode/extensions.json
+/.nova/
+/.zed/
+.phpactor.json
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+/storage/pail
+/public/fonts-manifest.dev.json
 
 # --- Herramientas de agentes ---
 /.opencode/
 /opencode.json
 /AGENT-*.md
 /.agents/
+/.codex
+/.cursor/
 
 # --- Artefactos de empaquetado y respaldos locales ---
 /dist/

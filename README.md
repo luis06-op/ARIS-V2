@@ -16,28 +16,27 @@ Repositorio: <https://github.com/luis06-op/ARIS-V2> · Estado: ver `docs/ESTADO-
 
 ## Estado actual del repositorio
 
-Este repositorio contiene **la base documental y la preparación técnica de las fases F0 y
-F1**. Todavía **no** hay aplicación ejecutable: el entorno verificado no dispone de
-Composer ni de un servidor MySQL activo, y la versión de PHP local (8.2.12) no alcanza el
-mínimo declarado para Laravel 13. Ver `docs/ESTADO-ARIS-2.0.md` y
-`docs/decisions/ADR-002-stack-y-version-php.md`.
+El repositorio contiene la base documental de F0 y el **esqueleto de aplicación Laravel 13**
+de F1. La aplicación arranca y su suite base pasa, pero **el esquema de ARIS aún no existe**:
+las migraciones del núcleo requieren una instancia MySQL sintética que todavía no está activa.
+Ver `docs/ESTADO-ARIS-2.0.md` y `docs/decisions/ADR-002-stack-y-version-php.md`.
 
 | Fase | Estado |
 |---|---|
-| F0 — Reconocimiento y seguridad del entorno | **COMPLETA (con bloqueos registrados)** |
-| F1 — Modelado, base de datos y migraciones | **PARCIAL**: diseño cerrado, migraciones pendientes de entorno |
+| F0 — Reconocimiento y seguridad del entorno | **COMPLETA** |
+| F1 — Modelado, base de datos y migraciones | **PARCIAL**: esqueleto instalado y probado; migraciones pendientes de MySQL |
 | F2–F10 | No iniciadas |
 
 ## Estructura del repositorio
 
 ```text
 ARIS-V2/
+├── app/ bootstrap/ config/ database/ public/ resources/ routes/ storage/ tests/ vendor/
+├── artisan  composer.json  composer.lock  package.json  phpunit.xml  vite.config.js
 ├── README.md
 ├── AGENTS.md
-├── .editorconfig
-├── .gitattributes
-├── .gitignore
-├── .env.example
+├── AVISO-DE-DERECHOS.md
+├── scripts/verificar-enlaces-docs.mjs
 └── docs/
     ├── ESTADO-ARIS-2.0.md          # bitácora compacta: fase, pruebas, bloqueos, siguiente paso
     ├── AGENTES-DISPONIBLES.md      # inventario real de agentes/CLI verificados en el equipo
@@ -50,35 +49,37 @@ ARIS-V2/
     └── deployment/                 # requisitos de hosting y checklist de seguridad
 ```
 
-La estructura de llegada completa (app/, database/, resources/, tests/…) está descrita en
-`docs/PLAN-DE-FASES.md` §2 y se construye **solo al implementar funcionalidad real**; este
-repositorio no crea carpetas ni archivos vacíos para aparentar avance.
+La estructura de llegada completa está descrita en `docs/PLAN-DE-FASES.md` §2; se construye
+**solo al implementar funcionalidad real**. Las carpetas del esqueleto de Laravel son las del
+starter oficial.
 
-## Requisitos previstos
+## Requisitos
 
 | Componente | Requisito | Estado en el equipo de desarrollo |
 |---|---|---|
-| PHP | ≥ 8.3 (objetivo Laravel 13) · 8.2 mínimo de Laravel 12 | 8.2.12 instalado → **decisión pendiente** |
-| Extensiones PHP | `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `intl`, `zip` | Verificadas |
-| Composer | 2.x | **No instalado** → bloquea el starter |
-| Node / npm | 20 LTS o superior | Node 26.13.0 / npm 11.20.0 verificados |
-| MySQL / MariaDB | 8.0 / 10.6+ con `utf8mb4` | Servidor **no activo** en esta sesión |
-| Almacenamiento privado | Disco local fuera de `public/` | Por configurar en F1 |
+| PHP | ≥ 8.3 (Laravel 13) | **8.4.23** local como `php8.4`; el `php` del sistema sigue en 8.2.12 |
+| Extensiones PHP | `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `intl`, `zip`, `gd`, `curl` | Verificadas en `php8.4` |
+| Composer | 2.x | **2.11.2** en `~/.local/bin/composer` |
+| Framework | Laravel 13 | **13.42.0** |
+| Node / npm | 20 LTS o superior | Node 26.13.0 / npm 11.20.0; registro npm **no verificado** |
+| MySQL / MariaDB | 8.0 / 10.6+ con `utf8mb4` | Servidor **no activo**; SQLite solo como laboratorio |
+| Almacenamiento privado | Disco local fuera de `public/` | Configurado el directorio; flujo en F4 |
 
-## Puesta en marcha (cuando F1 esté desbloqueada)
+## Puesta en marcha
 
 ```bash
 composer install
 cp .env.example .env
-php artisan key:generate
-php artisan migrate
+php8.4 artisan key:generate
+php8.4 artisan migrate          # requiere MySQL activo (aris2_dev)
 npm install
 npm run dev
-php artisan serve --host=127.0.0.1 --port=8099
+php8.4 artisan serve --host=127.0.0.1 --port=8099
 ```
 
-Estos comandos **no se han ejecutado** en este repositorio; se documentan como objetivo y
-se validarán al cerrar la puerta F1.
+En este equipo, sustituir `php` por `php8.4` (PHP 8.4.23 local) y `composer` por
+`php8.4 ~/.local/bin/composer`. La instalación del esqueleto y `php8.4 artisan test` ya se
+ejecutaron; las migraciones de ARIS **no**, porque no hay servidor MySQL activo.
 
 ## Reglas que no se negocian
 

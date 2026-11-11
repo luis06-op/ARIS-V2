@@ -1,19 +1,23 @@
 * text=auto eol=lf
 
-*.php   text diff=php
-*.md    text
-*.json  text
-*.css   text
-*.ts    text
-*.tsx   text
-*.yml   text
+*.blade.php diff=html
+*.css diff=css
+*.html diff=html
+*.md diff=markdown
+*.php diff=php
+*.ts diff=typescript
+*.tsx diff=typescript
 
-*.png   binary
-*.jpg   binary
-*.jpeg  binary
-*.gif   binary
-*.webp  binary
-*.svg   text
-*.pdf   binary
-*.docx  binary
-*.xlsx  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.zip  binary
+
+/.github export-ignore
+CHANGELOG.md export-ignore
+.styleci.yml export-ignore

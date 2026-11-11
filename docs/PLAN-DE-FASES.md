@@ -13,8 +13,8 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 
 | Fase | Nombre | Puerta de calidad (resumen) | Estado |
 |---|---|---|---|
-| F0 | Reconocimiento y seguridad del entorno | Entorno verificado, proyecto aislado, stack decidido | **COMPLETA** (2 bloqueos registrados) |
-| F1 | Modelado y base de datos | Instalación desde cero con una sola cadena de migraciones | **PARCIAL** (diseño cerrado; migraciones pendientes) |
+| F0 | Reconocimiento y seguridad del entorno | Entorno verificado, proyecto aislado, stack decidido | **COMPLETA** |
+| F1 | Modelado y base de datos | Instalación desde cero con una sola cadena de migraciones | **PARCIAL** (esqueleto instalado; migraciones pendientes de MySQL) |
 | F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | No iniciada |
 | F3 | Proyectos, guías y asignaciones | Asignación verificable e infalsificable | No iniciada |
 | F4 | Entregas, archivos privados y versionado | Flujo real proyecto → guía → entrega → archivo → versión | No iniciada |
@@ -79,7 +79,8 @@ Entregables:
 
 Puerta F0: entorno verificado, carpeta aislada, stack decidido o bloqueo explícito.
 
-Estado: **COMPLETA**. Bloqueos: Composer ausente y PHP 8.2.12 frente al objetivo 8.3.
+Estado: **COMPLETA**. Composer y PHP 8.4.23 quedaron instalados localmente durante F1
+(ver ADR-002).
 
 ---
 
@@ -101,8 +102,9 @@ Entregables:
 Puerta F1: `php artisan migrate` limpio en una base sintética nueva + suite de integridad en
 verde + versionado explicado.
 
-Estado: **PARCIAL**. El diseño está cerrado y documentado; las migraciones requieren Composer
-y un MySQL/MariaDB activo, ausentes en la sesión de creación.
+Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado y suite base en verde; el diseño del
+esquema está cerrado y documentado. Las migraciones del núcleo requieren un servidor
+MySQL/MariaDB activo, ausente en la sesión actual. La UI Inertia/React se integra en F2.
 
 ---
 
