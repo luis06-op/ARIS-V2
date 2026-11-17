@@ -32,13 +32,13 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 
 | ID | Invariante | Prueba prevista | Fase | Estado |
 |---|---|---|---|---|
-| INV-020 | Ningún archivo de evidencia es accesible por URL directa ni por `public/storage` | `AuthorizedDownloadTest::sin_url_publica` | F4 | PENDIENTE |
+| INV-020 | Ningún archivo de evidencia es accesible por URL directa ni por `public/storage` | `EvidenceStorageTest::test_una_evidencia_valida_se_guarda_fuera_de_public_y_queda_registrada` | F4 | **APROBADA** (17-11-2026) |
 | INV-021 | La descarga exige autorización sobre la versión exacta del documento | `AuthorizedDownloadTest::descarga_version_ajena_denegada` | F4 | PENDIENTE |
-| INV-022 | El archivo servido coincide byte a byte con el cargado y su SHA-256 es igual | `DocumentIntegrityTest::checksum_y_bytes` | F4 | PENDIENTE |
-| INV-023 | El nombre físico no deriva del nombre original y no admite `..`, rutas absolutas ni separadores | `PrivateUploadTest::traversal_y_nombre_opaco` | F4 | PENDIENTE |
-| INV-024 | Un tipo no permitido se rechaza por MIME real, no solo por extensión | `PrivateUploadTest::mime_falso_rechazado` | F4 | PENDIENTE |
+| INV-022 | El archivo servido coincide byte a byte con el cargado y su SHA-256 es igual | `EvidenceStorageTest::test_una_evidencia_valida_se_guarda_fuera_de_public_y_queda_registrada` y `test_la_descarga_devuelve_los_bytes_y_cabeceras_seguras` | F4 | **APROBADA** (17-11-2026) |
+| INV-023 | El nombre físico no deriva del nombre original y no admite `..`, rutas absolutas ni separadores | `EvidenceStorageTest::test_un_nombre_con_ruta_se_sanea_y_nunca_se_usa_como_ruta` | F4 | **APROBADA** (17-11-2026) |
+| INV-024 | Un tipo no permitido se rechaza por MIME real, no solo por extensión | `EvidenceStorageTest::test_un_contenido_que_no_es_pdf_se_rechaza_sin_dejar_metadato` y `test_un_formato_no_permitido_se_rechaza` | F4 | **APROBADA** (17-11-2026) |
 | INV-025 | Si falla la escritura del archivo, no queda metadato huérfano; si falla la transacción, el archivo se marca para limpieza | `PrivateUploadTest::fallo_parcial_sin_huerfanos` | F4 | PENDIENTE |
-| INV-026 | Un blob sin referencias se marca `huerfano` y no se borra sin verificación | `DocumentIntegrityTest::reconciliacion_de_huerfanos` | F4 | PENDIENTE |
+| INV-026 | Un blob sin referencias se marca `huerfano` y no se borra sin verificación | `EvidenceStorageTest::test_el_reconciliador_marca_incidentes_y_mueve_huerfanos_sin_borrar` | F4 | **APROBADA** (17-11-2026) |
 
 ## 4. Revisión y publicación
 

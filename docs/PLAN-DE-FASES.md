@@ -166,9 +166,12 @@ interfaz: F2 no está cerrada y `PI-002` no define quién puede asignar.
 
 Puerta F4: recorrido real de punta a punta sin sobrescritura histórica.
 
-Estado: **PREPARADA (estructura)**. `PI-001` aprobada: `SubmissionLink` y `CreateSubmission`
-exigen asignación vigente y versión exacta de la guía, y registran la excepción autorizada en
-auditoría. No hay carga de archivos: `PI-010` sigue pendiente.
+Estado: **PREPARADA (estructura y servicio)**. `PI-001` aprobada: `SubmissionLink` y
+`CreateSubmission` exigen asignación vigente y versión exacta de la guía, y registran la
+excepción autorizada en auditoría. El servicio privado de evidencias valida MIME real, firma,
+tamaño y SHA-256, guarda en `storage/app/private` y ofrece descarga con cabeceras seguras y
+reconciliación (`aris:verificar-storage`). No hay rutas HTTP ni interfaz: la autorización depende
+de `PI-002` y los límites formales de `PI-010` siguen pendientes (se aplican los conservadores).
 
 ---
 

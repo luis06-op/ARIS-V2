@@ -211,7 +211,9 @@ admite video?
 
 **Recomendación:** opción 1 en el MVP; video solo tras evaluación técnica y de privacidad.
 **Impacto si no se decide:** se aplican límites conservadores y video permanece deshabilitado.
-**Estado:** PENDIENTE.
+**Estado:** PENDIENTE. Mientras tanto se implementaron esos límites conservadores en
+`config/aris.php` (PDF/DOCX/XLSX/JPG/PNG, 10 MB, sin vídeo); no se ha aprobado una cuota por
+proyecto ni ningún formato adicional.
 
 ---
 

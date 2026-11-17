@@ -5,7 +5,7 @@
 
 **Última actualización:** 17 de noviembre de 2026
 **Fase en curso:** F1 con esquema completo en SQLite (B3 pendiente por instrucción) · F2 iniciada
-(acceso, registro, sesión y recuperación de contraseña) · F3/F4 preparadas solo en dominio ·
+(acceso, registro, sesión y recuperación de contraseña) · F3/F4 preparadas en dominio y servicio ·
 F6 adelantada (marca, sistema visual y pantallas base)
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
@@ -82,6 +82,10 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 - **Recuperación de contraseña (PI-008):** flujo estándar de Laravel con mailer `log`, respuesta
   uniforme para correos existentes y no existentes, límite de 5 solicitudes por minuto y
   contraseña de 8+ con letras y números (ADR implícito en la política aprobada).
+- **Almacenamiento privado (F4):** `EvidenceValidator`, `EvidenceStorage` y el comando
+  `aris:verificar-storage`. Validación por MIME real y firma, nombre opaco, cuarentena, SHA-256,
+  descarga con `nosniff`/`no-store` y reconciliación sin borrados automáticos. El disco `local`
+  queda con `serve => false`, sin `public/storage` ni URLs firmadas.
 - **Reglas de dominio (PI-001):** `SubmissionLink` exige asignación vigente y versión publicada;
   `CreateSubmission` audita la excepción; `UpdateGuideVersion` conserva las versiones publicadas
   creando una nueva. Sin interfaz ni autorización HTTP: `PI-002` sigue pendiente.
@@ -107,7 +111,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Disponibilidad MySQL (16-11-2026) | `mysqladmin --protocol=tcp -h 127.0.0.1 -P 3306 ping` | **NO DISPONIBLE** — no hay servidor escuchando |
 | Renderizado del diagrama Mermaid | `mmdc` / GitHub | **NO EJECUTADA** — herramienta no disponible |
 | QA visual | Playwright / navegador | **APROBADA (17-11-2026)** — capturas reales de portada, acceso, registro y «Mi cuenta» a 1440×900 y 390×844 |
-| Suite completa (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 43 pruebas, 160 aserciones |
+| Suite completa (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 54 pruebas, 197 aserciones |
 | Menú de accesibilidad (17-11-2026) | Playwright: abrir, aplicar, persistir, restablecer, `Escape` | **APROBADA** — 4 grupos, 9 opciones, foco devuelto al botón |
 | Botón de visibilidad de contraseña (17-11-2026) | Playwright: clic en `[data-password-toggle]` | **APROBADA** — `password` → `text`, valor conservado, `aria-pressed` y etiqueta actualizados |
 | Acceso con cuenta local (17-11-2026) | Playwright: formulario `/ingresar` | **APROBADA** — redirección a `/cuenta` y datos reales del perfil |
@@ -122,6 +126,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Integridad del esquema extendido (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 31 pruebas, 114 aserciones |
 | Recuperación de contraseña (17-11-2026) | `php8.4 artisan test` + Playwright | **APROBADA** — 5 pruebas nuevas; enlace visible, envío con mailer `log` y ojitos en el formulario de restablecimiento |
 | Reglas PI-001 (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 7 pruebas nuevas, con rechazo de asignación ajena/revocada, guía no publicada, excepción auditada e inmutabilidad de versión publicada |
+| Almacenamiento privado (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 11 pruebas nuevas: MIME falso, formato no permitido, vacío, tamaño, traversal, descarga byte a byte, 404 y reconciliación con `dry-run` |
 
 ## 5. Bloqueos activos
 
@@ -280,7 +285,7 @@ responsable autorizó avanzar con B3 pendiente y aprobó `PI-001` y `PI-008`.
 - `tests/Feature/Auth/PasswordResetTest.php` (5 pruebas) y
   `tests/Feature/Submissions/SubmissionRulesTest.php` (7 pruebas), todas con caso negativo.
 
-**Pruebas ejecutadas:** `php8.4 artisan test` (**43 pruebas, 160 aserciones, verde**),
+**Pruebas ejecutadas:** `php8.4 artisan test` (**54 pruebas, 197 aserciones, verde**),
 `php8.4 vendor/bin/pint --test` (sin desviaciones), lint PHP (sin errores),
 `node scripts/verificar-enlaces-docs.mjs` (sin enlaces rotos) y Playwright sobre las pantallas
 nuevas (enlace desde `/ingresar`, envío con aviso, ojitos en el restablecimiento, 0 errores de
@@ -295,5 +300,40 @@ tocarse.
 `PI-010` impide activar cargas de archivos. F1 sigue sin cerrar por B3.
 
 **Siguiente objetivo:** resolver `PI-002` para implementar `Policies`/`Gates` y conectar las
-acciones de dominio con rutas autorizadas; después habilitar el CRUD de proyectos, guías y
-entregas con la dirección visual aprobada.
+acciones de dominio y el servicio de evidencias con rutas autorizadas; después habilitar el CRUD
+de proyectos, guías y entregas con la dirección visual aprobada.
+
+---
+
+## 11. Sesión 2026-11-17 (continuación 3) — Almacenamiento privado de evidencias
+
+**Fase:** F4 avanzada en servicio y dominio; sin rutas HTTP ni interfaz. `PI-010` sigue pendiente,
+por lo que se aplican los límites conservadores documentados. B3 y `PI-002` permanecen pendientes.
+
+**Implementado:**
+
+- `config/aris.php` con los límites del documento de arquitectura (PDF/DOCX/XLSX/JPG/PNG, 10 MB,
+  máximo 5 archivos por versión, vídeo deshabilitado) y variables `ARIS_*` en `.env.example`.
+- `config/filesystems.php`: el disco `local` queda con `serve => false` para impedir URLs firmadas
+  de evidencias; no se crea `public/storage`.
+- `EvidenceValidator` valida tamaño, extensión, MIME real con `finfo`, firma del contenedor y
+  SHA-256; sanea el nombre original sin usar jamás rutas del cliente.
+- `EvidenceStorage::attach` escribe en cuarentena con UUID, verifica el hash del archivo
+  persistido, crea `file_blobs`, `document_versions`, `document_links` y el evento de auditoría en
+  transacción con bloqueo del padre, y solo después promueve el archivo a `documents/`. Si falla la
+  base borra el temporal; si falla la promoción el blob queda en cuarentena y se informa el error.
+- `EvidenceStorage::download` devuelve un `StreamedResponse` con `nosniff`, `no-store` y nombre
+  saneado; responde 404 si el blob no está disponible o el archivo no existe.
+- `aris:verificar-storage` compara base y disco: marca `huerfano` los blobs sin archivo, mueve a
+  cuarentena los archivos sin blob y nunca borra nada; `--dry-run` solo informa.
+- 11 pruebas nuevas en `tests/Feature/Storage/EvidenceStorageTest.php`.
+
+**Pruebas ejecutadas:** `php8.4 artisan test` (**54 pruebas, 197 aserciones, verde**), Pint, lint
+PHP, `npm run build` y comprobación de enlaces de documentación.
+
+**Seguridad y datos:** los archivos de prueba viven en `Storage::fake('local')`; no se crearon
+evidencias reales ni se sirvieron por HTTP. No hay controlador de descarga: la autorización sobre
+la versión exacta queda para cuando `PI-002` defina roles. Ningún borrado de blobs es automático.
+
+**Siguiente objetivo:** `PI-002` para conectar `Policies`/`Gates` con las rutas de carga, descarga,
+proyectos y entregas.
