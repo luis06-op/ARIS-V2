@@ -29,6 +29,11 @@ Regla de avance: **una fase a la vez**. Se permite preparar documentación de un
 futura, pero no escribir código de F(n+1) antes de cerrar la puerta de F(n) salvo
 investigación de solo lectura.
 
+> **Nota (17-11-2026):** el responsable pidió continuar dejando B3 pendiente. Eso permite
+> completar el esquema F1 y su documentación, pero **no cierra la puerta F1**. El código de F2+
+> requiere autorización explícita para avanzar sin la validación MySQL, y los flujos sensibles
+> de F3–F7 siguen bloqueados por `PI-001`…`PI-010`.
+
 ---
 
 ## 2. Estructura de llegada del repositorio
@@ -102,12 +107,14 @@ Entregables:
 Puerta F1: `php artisan migrate` limpio en una base sintética nueva + suite de integridad en
 verde + versionado explicado.
 
-Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado; las migraciones del núcleo
-(`institutions`, `users`, `roles`, membresías, `projects`) existen y la cadena completa se aplicó
-sin errores en SQLite de desarrollo, con la suite de integridad en verde. Falta repetir la
-instalación desde cero en una instancia MySQL sintética (`aris_v2_db`) y completar el resto del
-esquema (actividades, entregas, documentos, revisión, publicación y auditoría). La UI
-Inertia/React sigue pendiente: el frontend actual es Blade + Vite + Tailwind 4.
+Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado; **el esquema completo ya existe**:
+institutions, users, roles, membresías, proyectos, actividades, guías y asignaciones, entregas y
+sus versiones, blobs, documentos y sus versiones/vínculos, revisiones y comentarios,
+publicaciones y sus eventos, y auditoría. Las 23 migraciones propias se aplican desde cero en
+SQLite y la suite de integridad está en verde. Según instrucción del responsable, **B3 queda
+pendiente**: no se valida en MySQL sintética (`aris_v2_db`), por lo que la puerta F1 no se declara
+cerrada. Las restricciones `CHECK` se difieren a la capa de dominio (ADR-009). El frontend
+sigue siendo Blade + Vite + Tailwind 4, no Inertia/React.
 
 ---
 

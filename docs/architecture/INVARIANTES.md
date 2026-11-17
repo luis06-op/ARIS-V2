@@ -55,11 +55,11 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 
 | ID | Invariante | Prueba prevista | Fase | Estado |
 |---|---|---|---|---|
-| INV-040 | Desactivar o retirar un usuario no elimina proyectos, entregas, versiones ni revisiones | `MigrationIntegrityTest::borrado_de_usuario_restringido` | F1 | PENDIENTE |
-| INV-041 | Ningún `ON DELETE CASCADE` alcanza a evidencia histórica | `MigrationIntegrityTest::revisar_cascadas` | F1 | PENDIENTE |
+| INV-040 | Desactivar o retirar un usuario no elimina proyectos, entregas, versiones ni revisiones | `ExtendedSchemaIntegrityTest::test_un_usuario_con_evidencia_no_puede_borrarse` | F1 | **APROBADA** (SQLite, 17-11-2026) |
+| INV-041 | Ningún `ON DELETE CASCADE` alcanza a evidencia histórica | `ExtendedSchemaIntegrityTest::test_borrar_un_proyecto_con_entregas_esta_restringido` | F1 | **APROBADA** (SQLite, 17-11-2026) |
 | INV-042 | Toda acción sensible registra actor, acción, recurso, resultado e instante | `AuditIntegrityTest::evento_minimo` | F5 | PENDIENTE |
 | INV-043 | La auditoría no contiene contraseñas, tokens, contenido de archivos ni datos personales innecesarios | `AuditIntegrityTest::sin_secretos` | F5 | PENDIENTE |
-| INV-044 | «Última versión» se calcula por orden estable y no por un booleano mutable | `VersionSequenceTest::ultima_version_por_orden` | F1 | PENDIENTE |
+| INV-044 | «Última versión» se calcula por orden estable y no por un booleano mutable | `ExtendedSchemaIntegrityTest::test_la_ultima_version_se_calcula_por_numero_y_no_por_un_indicador_mutable` | F1 | **APROBADA** (SQLite, 17-11-2026) |
 | INV-045 | Las fechas se almacenan en UTC y se presentan en la zona de la institución | `MigrationIntegrityTest::zona_horaria` | F1 | PENDIENTE |
 
 ## 6. Reglas de aplicación

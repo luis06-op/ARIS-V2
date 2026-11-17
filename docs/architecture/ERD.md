@@ -267,6 +267,11 @@ erDiagram
   `(submission_id, version_number)`, `(document_id, version_number)`,
   `(institution_id, occurred_at)` para auditoría.
 
+**Nota (ADR-009):** los `CHECK` anteriores no están implementados en SQL portable. Laravel 13 no
+los expone en `Blueprint` y SQLite no permite `ALTER TABLE … ADD CONSTRAINT`. Se aplican en la
+capa de dominio cuando se construyan los flujos; la base garantiza hoy `NOT NULL`, `UNIQUE`, FK y
+enums. No se añade SQL específico de motor mientras B3 permanezca pendiente.
+
 ## 4. Verificación del diagrama
 
 El bloque Mermaid debe renderizar sin errores en un renderizador compatible (GitHub, VS Code,

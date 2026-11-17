@@ -8,6 +8,10 @@
 > `updated_at` en todas las tablas mutables salvo indicación; `utf8mb4_unicode_ci`; instantes
 > en UTC. La columna «Sensibilidad» clasifica el dato: **B** (bajo), **M** (medio: identifica
 > a una persona), **A** (alto: dato personal de menor o evidencia privada).
+>
+> Las restricciones `CHECK` citadas en este documento (exactamente uno de, `version_number >= 1`,
+> `size_bytes > 0`, SHA-256 hex) se aplican en la capa de dominio, no en SQL portable: ver
+> `ADR-009`. Las migraciones garantizan `NOT NULL`, `UNIQUE`, FK y enums.
 
 ## 1. Identidad e institución
 

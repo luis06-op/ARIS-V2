@@ -4,8 +4,8 @@
 > Formato compacto: no generar informes paralelos.
 
 **Última actualización:** 17 de noviembre de 2026
-**Fase en curso:** F1 parcial (núcleo migrado en SQLite; falta MySQL) · F2 iniciada (acceso,
-registro y sesión) · F6 adelantada (marca, sistema visual y pantallas base)
+**Fase en curso:** F1 con esquema completo en SQLite (B3 permanece pendiente por instrucción) · F2
+iniciada (acceso, registro y sesión) · F6 adelantada (marca, sistema visual y pantallas base)
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -75,6 +75,9 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
   proyectos. No se añadieron catálogos ni usuarios de producción.
 - `users` incorpora estado, idioma y último inicio de sesión. El diccionario indica que la
   coherencia entre fechas de membresía debe validarse en la capa de dominio.
+- **Esquema F1 completo (17-11-2026):** 14 migraciones y modelos adicionales para actividades,
+  guías y asignaciones, entregas y versiones, blobs, documentos y sus vínculos, revisiones,
+  publicaciones y auditoría. `ADR-009` documenta por qué los `CHECK` se difieren a dominio.
 
 ## 4. Pruebas ejecutadas
 
@@ -108,6 +111,8 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Contraste AA de tokens (17-11-2026) | cálculo de luminancia relativa WCAG 2.1 | **APROBADA** — 7 combinaciones ≥ 4,5:1 |
 | Movimiento reducido (17-11-2026) | Playwright `reducedMotion: reduce` + `getComputedStyle(.orb)` | **APROBADA** — `animation-name: none` |
 | Enlaces de documentación (17-11-2026) | `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 35 archivos, 58 enlaces, 0 rotos |
+| Esquema extendido en SQLite (17-11-2026) | `php8.4 artisan migrate --no-interaction` | **APROBADA** — 14 migraciones nuevas, 23 migraciones propias en total |
+| Integridad del esquema extendido (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 31 pruebas, 114 aserciones |
 
 ## 5. Bloqueos activos
 
@@ -136,10 +141,12 @@ se ha ejecutado una migración de ARIS en la base local.
 
 ## 7. Siguiente objetivo concreto
 
-**Cerrar F1 en el motor objetivo:** iniciar (con autorización) o conectar una instancia MySQL
-sintética `aris_v2_db`, aplicar la cadena completa de migraciones desde cero y repetir la suite
-de integridad. Después, completar el esquema F1 restante (actividades, asignaciones, entregas,
-documentos, revisión, publicación y auditoría).
+**B3 queda pendiente por instrucción expresa del responsable (17-11-2026).** No se conecta ni se
+migra ninguna instancia MySQL, por lo que la puerta F1 no se declara cerrada. El esquema F1 está
+completo y verificado en SQLite; el siguiente objetivo permitido es implementar la capa de dominio
+que aplica los `CHECK` diferidos en `ADR-009` con pruebas negativas, **si se autoriza avanzar sin
+cerrar F1**. F3–F7 siguen bloqueados además por `PI-001`, `PI-002`, `PI-003`, `PI-004`, `PI-006` y
+`PI-010`.
 
 ---
 
@@ -194,3 +201,42 @@ porque no existe membresía institucional ni rol asignado.
 
 **Siguiente objetivo:** F1 en MySQL sintética; luego completar el esquema antes de continuar F2
 (roles, policies y recuperación de contraseña).
+
+---
+
+## 9. Sesión 2026-11-17 (continuación) — Esquema F1 completo, B3 pendiente
+
+**Fase:** F1 completada en SQLite; puerta F1 **no cerrada** por instrucción de dejar B3 pendiente.
+No se escribió código de F2+.
+
+**Implementado:**
+
+- 14 migraciones nuevas (`2026_11_17_000001` … `000014`) con el resto del esquema:
+  `activities`, `activity_versions`, `activity_assignments`, `submissions`,
+  `submission_versions`, `file_blobs`, `documents`, `document_versions`, `document_links`,
+  `review_rounds`, `review_comments`, `publications`, `publication_events` y `audit_events`.
+  Todas las claves foráneas son explícitas; las de evidencia histórica usan `RESTRICT`.
+- 14 modelos Eloquent con relaciones, `fillable` y casts de JSON/fecha donde aplica.
+- `tests/Feature/Database/ExtendedSchemaIntegrityTest.php`: 12 pruebas con caso negativo para
+  unicidades de versión, duplicado de asignación y ronda de revisión, borrado restringido de
+  autores y proyectos con historial, orden estable de versiones, estados por defecto, auditoría
+  mínima sin secretos y revocación conservando evidencia.
+- `ADR-009`: los `CHECK` no portables se difieren a la capa de dominio; se rechaza SQL
+  específico de motor mientras B3 siga abierta. `docs/architecture/ERD.md`, `docs/architecture/DICCIONARIO-DATOS.md` y `docs/architecture/INVARIANTES.md`
+  actualizados en el mismo cambio.
+
+**Pruebas ejecutadas:** `php8.4 artisan migrate` (14 migraciones nuevas aplicadas en SQLite de
+desarrollo) y `php8.4 artisan test` (**31 pruebas, 114 aserciones, verde**).
+
+**Seguridad y datos:** no se crearon datos de demostración fuera de transacciones de prueba; no se
+tocó MySQL, ninguna base existente, la conexión de producción ni secretos. El usuario local de
+revisión de la sesión anterior sigue siendo el único registro de la base SQLite de desarrollo.
+
+**Bloqueos:** B3 permanece pendiente por decisión del responsable. Los flujos de F3–F7 siguen
+bloqueados por las políticas `PI-001…PI-010`; en especial la asignación de roles y responsables
+(`PI-002`), los estados de entrega (`PI-003`), la publicación (`PI-006`) y los formatos/cuotas
+(`PI-010`).
+
+**Siguiente objetivo:** autorizar (o no) avanzar a F2+ sin cerrar F1 y, antes de cualquier flujo
+sensible, resolver las `PI-###` que correspondan. Hasta entonces, solo se permite la capa de
+dominio que refuerza los invariantes estructurales.
