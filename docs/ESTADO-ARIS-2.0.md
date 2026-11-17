@@ -4,8 +4,9 @@
 > Formato compacto: no generar informes paralelos.
 
 **Última actualización:** 17 de noviembre de 2026
-**Fase en curso:** F1 con esquema completo en SQLite (B3 permanece pendiente por instrucción) · F2
-iniciada (acceso, registro y sesión) · F6 adelantada (marca, sistema visual y pantallas base)
+**Fase en curso:** F1 con esquema completo en SQLite (B3 pendiente por instrucción) · F2 iniciada
+(acceso, registro, sesión y recuperación de contraseña) · F3/F4 preparadas solo en dominio ·
+F6 adelantada (marca, sistema visual y pantallas base)
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -78,6 +79,12 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 - **Esquema F1 completo (17-11-2026):** 14 migraciones y modelos adicionales para actividades,
   guías y asignaciones, entregas y versiones, blobs, documentos y sus vínculos, revisiones,
   publicaciones y auditoría. `ADR-009` documenta por qué los `CHECK` se difieren a dominio.
+- **Recuperación de contraseña (PI-008):** flujo estándar de Laravel con mailer `log`, respuesta
+  uniforme para correos existentes y no existentes, límite de 5 solicitudes por minuto y
+  contraseña de 8+ con letras y números (ADR implícito en la política aprobada).
+- **Reglas de dominio (PI-001):** `SubmissionLink` exige asignación vigente y versión publicada;
+  `CreateSubmission` audita la excepción; `UpdateGuideVersion` conserva las versiones publicadas
+  creando una nueva. Sin interfaz ni autorización HTTP: `PI-002` sigue pendiente.
 
 ## 4. Pruebas ejecutadas
 
@@ -100,7 +107,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Disponibilidad MySQL (16-11-2026) | `mysqladmin --protocol=tcp -h 127.0.0.1 -P 3306 ping` | **NO DISPONIBLE** — no hay servidor escuchando |
 | Renderizado del diagrama Mermaid | `mmdc` / GitHub | **NO EJECUTADA** — herramienta no disponible |
 | QA visual | Playwright / navegador | **APROBADA (17-11-2026)** — capturas reales de portada, acceso, registro y «Mi cuenta» a 1440×900 y 390×844 |
-| Suite completa (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 19 pruebas, 77 aserciones |
+| Suite completa (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 43 pruebas, 160 aserciones |
 | Menú de accesibilidad (17-11-2026) | Playwright: abrir, aplicar, persistir, restablecer, `Escape` | **APROBADA** — 4 grupos, 9 opciones, foco devuelto al botón |
 | Botón de visibilidad de contraseña (17-11-2026) | Playwright: clic en `[data-password-toggle]` | **APROBADA** — `password` → `text`, valor conservado, `aria-pressed` y etiqueta actualizados |
 | Acceso con cuenta local (17-11-2026) | Playwright: formulario `/ingresar` | **APROBADA** — redirección a `/cuenta` y datos reales del perfil |
@@ -113,6 +120,8 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Enlaces de documentación (17-11-2026) | `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 35 archivos, 58 enlaces, 0 rotos |
 | Esquema extendido en SQLite (17-11-2026) | `php8.4 artisan migrate --no-interaction` | **APROBADA** — 14 migraciones nuevas, 23 migraciones propias en total |
 | Integridad del esquema extendido (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 31 pruebas, 114 aserciones |
+| Recuperación de contraseña (17-11-2026) | `php8.4 artisan test` + Playwright | **APROBADA** — 5 pruebas nuevas; enlace visible, envío con mailer `log` y ojitos en el formulario de restablecimiento |
+| Reglas PI-001 (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 7 pruebas nuevas, con rechazo de asignación ajena/revocada, guía no publicada, excepción auditada e inmutabilidad de versión publicada |
 
 ## 5. Bloqueos activos
 
@@ -133,8 +142,12 @@ se ha ejecutado una migración de ARIS en la base local.
 ## 6. Decisiones que requieren aprobación humana
 
 - **Stack:** decidido — Laravel 13.42.0 + PHP 8.4.23 local (ADR-002).
-- **PI-001…PI-011** (`docs/product/DECISIONES-INSTITUCIONALES.md`): ninguna se implementa con
-  valores por defecto inventados.
+- **Aprobadas el 17-11-2026:** `PI-001` (entrega vinculada a versión concreta de guía, con
+  excepción autorizada y auditada) y `PI-008` (recuperación por correo con token estándar y mailer
+  `log`, sin envío real).
+- **Pendientes:** `PI-002` (autoridad para asignar roles y responsables), `PI-003`, `PI-004`,
+  `PI-005`, `PI-006`, `PI-007`, `PI-009`, `PI-010` y `PI-011`. Ninguna se implementa con valores
+  por defecto inventados; sus flujos permanecen deshabilitados.
 - **Publicación del repositorio:** público en `github.com/luis06-op/ARIS-V2` con autorización
   del usuario. Titularidad declarada del **SENA** (`AVISO-DE-DERECHOS.md`, ADR-006); la
   confirmación institucional de la publicación pública es `PI-011`. **Sin licencia de uso.**
@@ -142,11 +155,11 @@ se ha ejecutado una migración de ARIS en la base local.
 ## 7. Siguiente objetivo concreto
 
 **B3 queda pendiente por instrucción expresa del responsable (17-11-2026).** No se conecta ni se
-migra ninguna instancia MySQL, por lo que la puerta F1 no se declara cerrada. El esquema F1 está
-completo y verificado en SQLite; el siguiente objetivo permitido es implementar la capa de dominio
-que aplica los `CHECK` diferidos en `ADR-009` con pruebas negativas, **si se autoriza avanzar sin
-cerrar F1**. F3–F7 siguen bloqueados además por `PI-001`, `PI-002`, `PI-003`, `PI-004`, `PI-006` y
-`PI-010`.
+migra ninguna instancia MySQL, por lo que la puerta F1 no se declara cerrada. El avance a F2+ fue
+autorizado en la misma sesión. El siguiente objetivo concreto es resolver `PI-002` (quién asigna
+roles y responsables) para poder implementar `Policies`/`Gates` y retirar las excepciones de
+dominio que hoy solo se ejecutan desde acciones internas. Después vendrá el CRUD de F3/F4 con la
+interfaz real, siempre sin datos de demostración.
 
 ---
 
@@ -240,3 +253,47 @@ bloqueados por las políticas `PI-001…PI-010`; en especial la asignación de r
 **Siguiente objetivo:** autorizar (o no) avanzar a F2+ sin cerrar F1 y, antes de cualquier flujo
 sensible, resolver las `PI-###` que correspondan. Hasta entonces, solo se permite la capa de
 dominio que refuerza los invariantes estructurales.
+
+---
+
+## 10. Sesión 2026-11-17 (continuación 2) — F2 y reglas de dominio de F3/F4
+
+**Fase:** F2 iniciada con recuperación de contraseña; F3/F4 preparadas solo en dominio. El
+responsable autorizó avanzar con B3 pendiente y aprobó `PI-001` y `PI-008`.
+
+**Implementado:**
+
+- **PI-008 (aprobada):** `PasswordResetController`, `ResetPasswordRequest`, vistas
+  `auth/olvide-password` y `auth/restablecer-password`, traducciones `lang/es/passwords.php` y
+  rutas `/olvide-password` y `/restablecer-password/{token}`. El envío usa el mailer `log`; la
+  respuesta ante un correo inexistente es idéntica a la de uno registrado para no enumerar
+  cuentas. Límite de 5 solicitudes por minuto por IP.
+- Se retiró el aviso duplicado de `session('status')` en las vistas de acceso, registro y
+  recuperación: ahora lo muestra una sola vez el layout público.
+- **PI-001 (aprobada):** `app/Domain/Submissions/SubmissionLink` valida asignación vigente,
+  proyecto coincidente y versión de guía publicada; `app/Actions/Submissions/CreateSubmission`
+  crea la entrega en transacción y, cuando se invoca la excepción sin asignación, exige un actor
+  autorizado y escribe `submission.unlinked_exception` en `audit_events` con el motivo.
+- `app/Actions/Guides/UpdateGuideVersion`: editar una versión publicada crea una nueva con
+  número calculado bajo bloqueo de la fila padre; editar un borrador lo modifica en el lugar.
+- `app/Exceptions/DomainRuleViolation` para los invariantes de dominio.
+- `tests/Feature/Auth/PasswordResetTest.php` (5 pruebas) y
+  `tests/Feature/Submissions/SubmissionRulesTest.php` (7 pruebas), todas con caso negativo.
+
+**Pruebas ejecutadas:** `php8.4 artisan test` (**43 pruebas, 160 aserciones, verde**),
+`php8.4 vendor/bin/pint --test` (sin desviaciones), lint PHP (sin errores),
+`node scripts/verificar-enlaces-docs.mjs` (sin enlaces rotos) y Playwright sobre las pantallas
+nuevas (enlace desde `/ingresar`, envío con aviso, ojitos en el restablecimiento, 0 errores de
+consola).
+
+**Seguridad y datos:** ningún correo real fue enviado; el token se entrega por la notification de
+Laravel al canal `log`. No se introdujeron roles ni autorizaciones HTTP: las acciones de dominio
+se prueban con actores explícitos y la interfaz no expone la excepción de PI-001. B3 sigue sin
+tocarse.
+
+**Bloqueos:** `PI-002` impide asignar roles y, por tanto, publicar CRUD con autorización;
+`PI-010` impide activar cargas de archivos. F1 sigue sin cerrar por B3.
+
+**Siguiente objetivo:** resolver `PI-002` para implementar `Policies`/`Gates` y conectar las
+acciones de dominio con rutas autorizadas; después habilitar el CRUD de proyectos, guías y
+entregas con la dirección visual aprobada.

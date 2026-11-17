@@ -10,7 +10,7 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 
 | ID | Invariante | Prueba prevista | Fase | Estado |
 |---|---|---|---|---|
-| INV-001 | Un usuario no puede autenticarse con estado `inactivo` o `bloqueado`, aunque su contraseña sea correcta | `AuthenticationTest::usuario_inactivo_no_puede_entrar` | F2 | PENDIENTE |
+| INV-001 | Un usuario no puede autenticarse con estado `inactivo` o `bloqueado`, aunque su contraseña sea correcta | `AuthenticationTest::test_una_cuenta_inactiva_no_puede_iniciar_sesion` | F2 | **APROBADA** (17-11-2026) |
 | INV-002 | La sesión se regenera tras autenticarse y se invalida por completo al cerrar sesión | `AuthenticationTest::rotacion_de_sesion_y_logout` | F2 | PENDIENTE |
 | INV-003 | Un actor solo accede a un recurso si su membresía en el proyecto está vigente y su rol lo permite | `ProjectAccessTest::acceso_cruzado_denegado` | F2 | PENDIENTE |
 | INV-004 | Cambiar un ID en la URL no concede acceso; la respuesta es 403/404 sin filtrar datos | `ProjectAccessTest::idor_por_id_ajeno` | F2 | PENDIENTE |
@@ -21,10 +21,10 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 
 | ID | Invariante | Prueba prevista | Fase | Estado |
 |---|---|---|---|---|
-| INV-010 | Una asignación apunta a una versión de guía concreta; publicar una versión nueva no altera asignaciones existentes | `ActivityAssignmentTest::asignacion_fija_version` | F3 | PENDIENTE |
-| INV-011 | Una versión publicada de guía es inmutable: editarla crea otra versión | `ActivityAssignmentTest::version_publicada_inmutable` | F3 | PENDIENTE |
-| INV-012 | Una entrega no puede asociarse a una actividad de otro proyecto ni a una asignación revocada | `ActivityAssignmentTest::asignacion_ajena_o_revocada` | F3 | PENDIENTE |
-| INV-013 | Ninguna asignación se aplica de forma implícita «a la última guía» | `ActivityAssignmentTest::sin_asignacion_implicita` | F3 | PENDIENTE |
+| INV-010 | Una asignación apunta a una versión de guía concreta; publicar una versión nueva no altera asignaciones existentes | `SubmissionRulesTest::test_una_entrega_queda_vinculada_a_la_version_publicada_de_la_guia` | F3 | **APROBADA** (17-11-2026, dominio) |
+| INV-011 | Una versión publicada de guía es inmutable: editarla crea otra versión | `SubmissionRulesTest::test_editar_una_version_publicada_crea_otra_y_no_altera_la_original` | F3 | **APROBADA** (17-11-2026, dominio) |
+| INV-012 | Una entrega no puede asociarse a una actividad de otro proyecto ni a una asignación revocada | `SubmissionRulesTest::test_se_rechaza_una_asignacion_de_otro_proyecto` y `test_se_rechaza_una_asignacion_revocada` | F3 | **APROBADA** (17-11-2026, dominio) |
+| INV-013 | Ninguna asignación se aplica de forma implícita «a la última guía» | `SubmissionRulesTest::test_sin_asignacion_hace_falta_autorizacion_y_la_excepcion_se_audita` | F3 | **APROBADA** (17-11-2026, dominio) |
 | INV-014 | Una versión de entrega finalizada no se modifica; corregir exige una nueva versión | `SubmissionVersioningTest::version_finalizada_inmutable` | F4 | PENDIENTE |
 | INV-015 | Nunca existen dos versiones con el mismo número para el mismo padre | `SubmissionConcurrencyTest::dos_envios_simultaneos` | F4 | PENDIENTE |
 

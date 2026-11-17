@@ -4,7 +4,8 @@
 > alimentan. Ninguna pantalla se implementa antes de que exista su flujo en el backend; no se
 > crean prototipos con contenido inventado que puedan confundirse con funcionalidad.
 >
-> **Implementadas al 2026-11-17:** `/` (portada), `/ingresar`, `/registro`, `/salir` y `/cuenta`.
+> **Implementadas al 2026-11-17:** `/` (portada), `/ingresar`, `/registro`, `/salir`, `/cuenta`,
+> `/olvide-password` y `/restablecer-password/{token}`.
 > El resto de rutas de este documento son previsiones, no enlaces existentes.
 
 ## 1. Público
@@ -15,8 +16,8 @@
 | Repositorio público | `/repositorio` | Publicaciones activas con alcance `publico` | F7 |
 | Ver obra publicada | `/repositorio/{slug}` | Versión publicada + metadatos autorizados | F7 |
 | Iniciar sesión | `/ingresar` | Credenciales | F2 — implementada |
-| Recuperar contraseña | `/recuperar` | Correo institucional | F2 |
-| Restablecer contraseña | `/restablecer/{token}` | Token de un solo uso | F2 |
+| Recuperar contraseña | `/olvide-password` | Correo registrado; mailer `log` (PI-008) | F2 — implementada |
+| Restablecer contraseña | `/restablecer-password/{token}` | Token de un solo uso | F2 — implementada |
 
 ## 2. Autenticado — aprendiz
 

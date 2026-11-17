@@ -131,10 +131,11 @@ sigue siendo Blade + Vite + Tailwind 4, no Inertia/React.
 
 Puerta F2: ningún recurso accesible adivinando IDs ni alterando el request.
 
-Estado: **INICIADA** (2026-11-17). Implementados el acceso, el registro abierto aprobado, el
-cierre de sesión con invalidación, el límite de intentos y la pantalla «Mi cuenta» con datos
-reales. Faltan roles institucionales, `Policies`/`Gates`, recuperación de contraseña, verificación
-de correo y las pruebas negativas de autorización por recurso.
+Estado: **INICIADA** (17-11-2026). Implementados el acceso, el registro abierto aprobado, el
+cierre de sesión con invalidación, el límite de intentos, la pantalla «Mi cuenta» con datos reales
+y la **recuperación de contraseña** por correo con mailer `log` (`PI-008` aprobada). Faltan roles
+institucionales, `Policies`/`Gates`, verificación de correo y las pruebas negativas de
+autorización por recurso.
 
 ---
 
@@ -148,6 +149,10 @@ de correo y las pruebas negativas de autorización por recurso.
 
 Puerta F3: un actor autorizado crea proyecto y guía y asigna; otro no puede falsificarlo.
 
+Estado: **PREPARADA (estructura)**. Existen el esquema, los modelos y la regla de dominio que
+impide editar una versión publicada de guía (`UpdateGuideVersion`, INV-011). No hay CRUD ni
+interfaz: F2 no está cerrada y `PI-002` no define quién puede asignar.
+
 ---
 
 ### FASE 4 — Entregas, archivos privados y versionado inmutable
@@ -160,6 +165,10 @@ Puerta F3: un actor autorizado crea proyecto y guía y asigna; otro no puede fal
 - Descarga mediante policy sobre la **versión exacta**; rechazo de traversal e IDOR.
 
 Puerta F4: recorrido real de punta a punta sin sobrescritura histórica.
+
+Estado: **PREPARADA (estructura)**. `PI-001` aprobada: `SubmissionLink` y `CreateSubmission`
+exigen asignación vigente y versión exacta de la guía, y registran la excepción autorizada en
+auditoría. No hay carga de archivos: `PI-010` sigue pendiente.
 
 ---
 

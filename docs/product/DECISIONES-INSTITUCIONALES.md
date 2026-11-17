@@ -29,7 +29,11 @@ versión». Afecta validaciones, mensajes de error y la trazabilidad que promete
 **Recomendación:** opción 2, con la excepción como acción auditada y limitada a un rol.
 **Impacto si no se decide:** el flujo de creación de entrega queda construido pero deshabilitado
 para proyectos reales.
-**Estado:** PENDIENTE.
+**Estado:** **APROBADA por el responsable del proyecto el 2026-11-17** (alternativa 2). Toda
+entrega debe declarar la asignación y, por lo tanto, la versión exacta de la guía. Se admite una
+excepción solo si la registra un actor autorizado como evento de auditoría
+(`submission.unlinked_exception`) con motivo; el rol concreto que puede autorizar depende de
+`PI-002` y sigue pendiente, por lo que la excepción no se expone en interfaz.
 
 ---
 
@@ -170,7 +174,10 @@ correo institucional?
 **Recomendación:** opción 1 como principal y opción 2 como respaldo auditado.
 **Impacto si no se decide:** solo se implementa el flujo estándar del framework por correo, con
 envío real deshabilitado (mailer `log`).
-**Estado:** PENDIENTE.
+**Estado:** **APROBADA por el responsable del proyecto el 2026-11-17** (alternativa 1: correo con
+token de un solo uso y expiración corta). Se implementa el flujo estándar de Laravel con el mailer
+`log` del entorno local; **no se envían correos reales** hasta que la institución configure un
+servicio y resuelva el respaldo presencial. La tasa de solicitudes se limita en la ruta.
 
 ---
 
@@ -235,14 +242,14 @@ público); falta la formalización institucional.
 
 | PI | Estado | Fecha | Responsable | Observaciones |
 |---|---|---|---|---|
-| PI-001 | PENDIENTE | — | — | — |
+| PI-001 | APROBADA | 2026-11-17 | Responsable del proyecto | Entrega vinculada a versión concreta de guía; excepción autorizada y auditada; el rol autorizador depende de PI-002 |
 | PI-002 | PARCIAL | 2026-11-17 | Responsable del proyecto | Autoregistro abierto aprobado; autoridad de roles, responsables de proyecto y evaluaciones sigue pendiente |
 | PI-003 | PENDIENTE | — | — | — |
 | PI-004 | PENDIENTE | — | — | — |
 | PI-005 | PENDIENTE | — | — | — |
 | PI-006 | PENDIENTE | — | — | — |
 | PI-007 | PENDIENTE | — | — | — |
-| PI-008 | PENDIENTE | — | — | — |
+| PI-008 | APROBADA | 2026-11-17 | Responsable del proyecto | Recuperación por correo con token estándar de Laravel; envío real deshabilitado (mailer log) |
 | PI-009 | PENDIENTE | — | — | — |
 | PI-010 | PENDIENTE | — | — | — |
 | PI-011 | PENDIENTE | — | — | Titularidad SENA declarada; falta formalizar publicación pública |
