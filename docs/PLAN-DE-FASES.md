@@ -14,12 +14,12 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 | Fase | Nombre | Puerta de calidad (resumen) | Estado |
 |---|---|---|---|
 | F0 | Reconocimiento y seguridad del entorno | Entorno verificado, proyecto aislado, stack decidido | **COMPLETA** |
-| F1 | Modelado y base de datos | Instalación desde cero con una sola cadena de migraciones | **PARCIAL** (esqueleto instalado; migraciones pendientes de MySQL) |
-| F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | No iniciada |
+| F1 | Modelado y base de datos | Instalación desde cero con una sola cadena de migraciones | **PARCIAL** (migraciones del núcleo creadas y suite en verde sobre SQLite; falta MySQL) |
+| F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | **INICIADA** (acceso, registro y sesión; faltan roles, policies y pruebas negativas) |
 | F3 | Proyectos, guías y asignaciones | Asignación verificable e infalsificable | No iniciada |
 | F4 | Entregas, archivos privados y versionado | Flujo real proyecto → guía → entrega → archivo → versión | No iniciada |
 | F5 | Revisiones y trazabilidad | Revisión de versión exacta sin alterar historial | No iniciada |
-| F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | No iniciada |
+| F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | **ADELANTADA** (marca, sistema visual, portada, acceso y «Mi cuenta» según ADR-008) |
 | F7 | Repositorio, búsqueda y publicación | El visitante ve solo lo explícitamente publicado | No iniciada |
 | F8 | Operación, respaldo y seguridad | Restore probado y sin archivos privados accesibles por HTTP | No iniciada |
 | F9 | Hosting y entrega candidata | Paquete reproducible con manifiesto y simulacro | No iniciada |
@@ -102,9 +102,12 @@ Entregables:
 Puerta F1: `php artisan migrate` limpio en una base sintética nueva + suite de integridad en
 verde + versionado explicado.
 
-Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado y suite base en verde; el diseño del
-esquema está cerrado y documentado. Las migraciones del núcleo requieren un servidor
-MySQL/MariaDB activo, ausente en la sesión actual. La UI Inertia/React se integra en F2.
+Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado; las migraciones del núcleo
+(`institutions`, `users`, `roles`, membresías, `projects`) existen y la cadena completa se aplicó
+sin errores en SQLite de desarrollo, con la suite de integridad en verde. Falta repetir la
+instalación desde cero en una instancia MySQL sintética (`aris_v2_db`) y completar el resto del
+esquema (actividades, entregas, documentos, revisión, publicación y auditoría). La UI
+Inertia/React sigue pendiente: el frontend actual es Blade + Vite + Tailwind 4.
 
 ---
 
@@ -112,12 +115,19 @@ MySQL/MariaDB activo, ausente en la sesión actual. La UI Inertia/React se integ
 
 - Autenticación oficial mantenida por el framework (login, logout, reset por token, CSRF,
   rate limit, rotación de sesión).
-- Aprovisionamiento institucional (sin registro abierto universal: `PI-002`).
+- Aprovisionamiento institucional: el **autoregistro está aprobado** (`PI-002`, parcial); la
+  asignación de roles, la designación de responsables y la autorización de evaluaciones siguen
+  pendientes.
 - Roles institucionales + roles por proyecto; `Policies`/`Gates` por recurso.
 - Pruebas negativas: aprendiz contra proyecto ajeno, instructor no asignado, evaluador no
   autorizado, anónimo, IDOR por cambio de ID.
 
 Puerta F2: ningún recurso accesible adivinando IDs ni alterando el request.
+
+Estado: **INICIADA** (2026-11-17). Implementados el acceso, el registro abierto aprobado, el
+cierre de sesión con invalidación, el límite de intentos y la pantalla «Mi cuenta» con datos
+reales. Faltan roles institucionales, `Policies`/`Gates`, recuperación de contraseña, verificación
+de correo y las pruebas negativas de autorización por recurso.
 
 ---
 
@@ -167,6 +177,10 @@ Puerta F5: línea de tiempo verificable y revisión inmutable.
 
 Puerta F6: coherencia y accesibilidad del recorrido completo; sin UI que simule operaciones
 inexistentes.
+
+Estado: **ADELANTADA** (2026-11-17, autorizado por el responsable del proyecto). Marca vectorial,
+sistema de tokens, portada pública, acceso, registro y armazón de «Mi cuenta» implementados según
+ADR-008. Las pantallas con métricas por rol esperan datos reales de F3.
 
 ---
 

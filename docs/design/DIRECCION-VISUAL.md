@@ -1,118 +1,129 @@
-# Dirección visual — «Conocimiento que deja huella»
+# Dirección visual — ARIS 2.0
 
-> **Estado: propuesta.** No hay aprobación de la dirección visual ni de la institución.
-> Antigravity no está disponible en el entorno (ver `docs/AGENTES-DISPONIBLES.md`), por lo que
-> esta propuesta la asume OpenCode y requiere validación humana antes de F6.
->
-> No se reutiliza ningún logotipo, color o material de proyectos anteriores.
+> **Estado: aprobada el 2026-11-17** por el responsable del proyecto (ADR-008). Sustituye la
+> propuesta editorial en papel cálido del 11-11-2026. La marca y los tokens están implementados
+> en `public/assets/brand/` y `resources/css/app.css`.
 
 ## 1. Concepto
 
-ARIS debe sentirse como una **biblioteca académica viva**: un archivo editorial contemporáneo
-donde el trabajo de estudiantes y docentes se percibe como una contribución valiosa. No un
-panel SaaS genérico, no un aula virtual infantilizada.
+ARIS se presenta como un **archivo vivo**: un espacio nocturno, silencioso y preciso donde el
+trabajo académico brilla —literalmente— con luz propia. El búho es el guardián del archivo: mira
+de frente, no adorna.
 
-Metáfora rectora: **folios, hitos y vínculos**. La evolución de un proyecto se lee como una
-secuencia de versiones con marcas de tiempo y autoría, no como una línea de tiempo decorativa.
+La metáfora de fondo son **órbitas**: círculos de luz que rodean el conocimiento y se conectan
+sin jerarquía visual. No es un panel SaaS genérico ni un aula virtual infantilizada.
 
 ## 2. Principios
 
-1. **Memoria visible** — la versión, la fecha y el autor son parte del contenido, no un detalle
-   escondido en un tooltip.
-2. **Jerarquía editorial** — tipografía con contraste fuerte, márgenes deliberados, retícula
-   de 12 columnas, densidad controlada.
-3. **Calidez sin infantilizar** — color cálido en acentos, superficies neutras, sin
-   ilustraciones caricaturescas.
-4. **Movimiento con propósito** — transiciones breves de estado; animación de fondo **solo** en
-   la landing.
-5. **Accesibilidad primero** — contraste AA, foco visible, navegación por teclado, respeto a
+1. **Memoria visible** — la versión, la fecha y la autoría forman parte del contenido.
+2. **Contraste nocturno** — superficies oscuras, texto claro y acentos de luz; nada de grises
+   indistinguibles.
+3. **Luz con significado** — verde para acción y confirmación, cian para información y enlaces.
+   El color de estado no se usa como decoración.
+4. **Movimiento lento** — órbitas de fondo a 20–40 s, sin rebotes ni parallax; se detienen con
    `prefers-reduced-motion`.
+5. **Accesibilidad primero** — contraste AA verificado, foco visible, navegación por teclado.
 
-## 3. Paleta propuesta
+## 3. Paleta
 
-Los valores son un punto de partida, no una decisión final. Deben validarse con contraste real.
-
-| Token | Valor propuesto | Uso |
+| Token | Valor | Uso |
 |---|---|---|
-| `--aris-ink` | `#1B1A17` | Texto principal |
-| `--aris-ink-soft` | `#55514A` | Texto secundario |
-| `--aris-paper` | `#FBF9F4` | Fondo base (papel cálido) |
-| `--aris-surface` | `#FFFFFF` | Tarjetas y superficies elevadas |
-| `--aris-line` | `#E2DDD1` | Bordes y separadores |
-| `--aris-accent` | `#2F5D50` | Acento institucional (verde profundo) |
-| `--aris-accent-soft` | `#E7EFEA` | Fondos de acento suave |
-| `--aris-highlight` | `#C9A227` | Marca de hito o versión destacada |
-| `--aris-danger` | `#A63A2E` | Error y acciones destructivas |
-| `--aris-success` | `#2E6B4F` | Confirmación |
-| `--aris-info` | `#3A5A78` | Información y estados neutros |
+| `--color-noche` | `#09111E` | Fondo base de toda la aplicación |
+| `--color-noche-alta` | `#0B1826` | Barras y superficies de navegación |
+| `--color-superficie` | `#0A1624` | Tarjetas |
+| `--color-superficie-2` | `#0E1F33` | Hover y superficies elevadas |
+| `--color-borde` | `#1A2C40` | Bordes y separadores |
+| `--color-texto` | `#F4F8FF` | Texto principal |
+| `--color-tenue` | `#93A7BD` | Texto secundario |
+| `--color-verde` | `#2FDC70` | Acción principal, confirmación, marca |
+| `--color-verde-hondo` | `#0F3D26` | Texto sobre verde (contraste) |
+| `--color-cian` | `#3596FF` | Acción secundaria e información |
+| `--color-cian-claro` | `#7FE7FF` | Enlaces y foco |
+| `--color-rojo` | `#FF6B6B` | Error y acciones destructivas |
+| `--color-ambar` | `#F5B544` | Advertencia y estados intermedios |
 
-El color de estado se reserva para significado real: no se usa como decoración.
+Contraste verificado (WCAG 2.1):
+
+| Combinación | Ratio | Resultado |
+|---|---|---|
+| `#F4F8FF` sobre `#09111E` | 17,75:1 | AA / AAA |
+| `#93A7BD` sobre `#09111E` | 7,66:1 | AA / AAA |
+| `#2FDC70` sobre `#09111E` | 10,44:1 | AA / AAA |
+| `#04240F` sobre `#2FDC70` (botón) | 9,17:1 | AA / AAA |
+| `#7FE7FF` sobre `#09111E` | 13,31:1 | AA / AAA |
+| `#FF6B6B` sobre `#09111E` | 6,81:1 | AA |
+| `#6D8599` sobre `#081220` (placeholder) | 4,89:1 | AA |
 
 ## 4. Tipografía
 
-- **Títulos:** serif editorial con fallback local (`Georgia, 'Times New Roman', serif`) o una
-  fuente variable autoalojada si se aprueba su licencia y peso.
-- **Texto e interfaz:** sans-serif de sistema (`system-ui, -apple-system, 'Segoe UI', Roboto,
-  sans-serif`).
-- **Datos y versiones:** sans con cifras tabulares (`font-variant-numeric: tabular-nums`).
-- **Sin dependencia de Google Fonts ni CDN tipográficos** en producción.
-
-Escala propuesta (rem): 0.75 · 0.875 · 1 · 1.125 · 1.25 · 1.5 · 1.875 · 2.25 · 3.
+- **Familia:** Instrument Sans (SIL Open Font License), autoalojada y compilada por Vite; no hay
+  CDN tipográfico en tiempo de ejecución. Pesos 400, 500, 600, 700 y 800.
+- **Títulos:** peso 700–800, `letter-spacing: -0.025em`, altura de línea 1,05–1,1.
+- **Texto:** 16 px base, 0,95–1,05 rem en interfaz, `line-height` 1,6.
+- **Etiquetas:** mayúsculas de 0,68–0,72 rem con `letter-spacing` 0,1–0,18 em.
+- **Datos:** cifras tabulares cuando existan tablas reales.
 
 ## 5. Espaciado, radios y elevación
 
-- Escala de espaciado en múltiplos de 4 px: 4, 8, 12, 16, 24, 32, 48, 64.
-- Radios: 4 px (controles), 8 px (tarjetas), 12 px (contenedores), 999 px (chips).
-- Elevación sobria: una sola sombra (`0 1px 2px rgba(27,26,23,.06), 0 8px 24px rgba(27,26,23,.06)`);
-  el resto se resuelve con bordes.
-- Retícula: 12 columnas, ancho máximo 1200 px, gutter 24 px, márgenes laterales 16/24/32 px.
+- Escala en múltiplos de 4 px: 4, 8, 12, 16, 24, 32, 48, 64.
+- Radios: 10 px (controles), 16 px (tarjetas), 999 px (botones y chips).
+- Elevación: sombra suave `0 18px 40px rgba(0,0,0,.28)` en tarjetas y halo de color solo en
+  botones y órbitas.
+- Retícula: ancho máximo 1200 px, gutter 20–32 px según viewport.
 
-## 6. Iconografía
+## 6. Marca e iconografía
 
-Set lineal propio de 24×24 px, trazo 1.5 px, esquinas redondeadas 2 px, un solo estilo:
-`project`, `activity`, `submission`, `document`, `version`, `review`, `publication`,
-`institution`. Se entregan como SVG en `public/assets/icons/` cuando exista F6. No se mezclan
-packs.
+- Archivos: `public/assets/brand/aris-isotipo.svg`, `aris-logotipo.svg`, `aris-insignia.svg`;
+  favicon en `public/favicon.svg`. Todos usan `currentColor`.
+- El logotipo se vectorizó del arte entregado por el responsable (ADR-008).
+- Iconografía lineal de 24×24 px, trazo 1,6–1,7 px, esquinas redondeadas; se dibuja en línea
+  cuando hace falta un icono nuevo. No se mezclan packs externos.
 
-## 7. Landing pública
+## 7. Estructura visual implementada
 
-Secciones (contenido real, sin cifras inventadas):
+1. **Portada pública** — cabecera con marca y acceso; héroe con titular, párrafo, dos acciones
+   y composición orbital de marca; sección «Proyectos publicados» con estado vacío real;
+   bloque «Qué conserva ARIS» con tres tarjetas (versiones, revisión, publicación).
+2. **Acceso y registro** — tarjeta centrada sobre fondo orbital, sin cabecera ni pie.
+3. **Mi cuenta** — armazón privado con barra lateral de marca, chip de rol, datos reales del
+   perfil y aviso explícito de lo que aún no existe.
+4. **Campos de contraseña** — componente `campo-contrasena` con botón «ojito» que alterna
+   `type=password` / `type=text`, actualiza `aria-pressed` y la etiqueta accesible, y devuelve el
+   foco al campo.
+5. **Menú de accesibilidad** — botón flotante en el sitio público y en el área privada. Ofrece
+   tamaño del texto (normal, grande, muy grande), contraste alto, movimiento reducido y enlaces
+   subrayados. Se guarda en `localStorage` (`aris.accesibilidad`), no se envía al servidor y se
+   puede restablecer. El panel cierra con `Escape` o clic fuera y anuncia los cambios con una
+   región `aria-live`.
 
-1. **Hero** — propuesta de valor, ejemplo visual propio, entrada a sesión.
-2. **Problema** — pérdida de seguimiento y memoria académica.
-3. **Ciclo del conocimiento** — proyecto → guía → entrega → versión → revisión → preservación.
-4. **Beneficios por rol** — aprendiz, docente, institución.
-5. **Repositorio público** — solo si hay material publicado; si no, explicación honesta.
-6. **Privacidad, seguridad y accesibilidad** — afirmaciones demostrables.
-7. **Preguntas frecuentes y pie institucional.**
-
-**Fondo animado (solo landing):** SVG/CSS ligero con folios y trazos que se conectan. Debe:
-- pausarse con `prefers-reduced-motion` y con `document.hidden`;
-- limitar el trabajo por fotograma y usar `requestAnimationFrame` con throttle;
-- mantener contraste del texto y no capturar eventos;
-- tener fallback estático y no superar un presupuesto de CPU definido en F6.
-
-No se anima ningún fondo en los paneles internos.
+No se muestran métricas, usuarios ni proyectos de demostración. Cuando una sección no tiene
+datos, se explica por qué.
 
 ## 8. Tonos de voz
 
 - Claro, respetuoso, sin infantilizar ni dramatizar.
 - Sin superlativos ni promesas («infalible», «revolucionario», «IA que califica»).
 - Mensajes de error que explican **qué pasó y qué hacer**, sin culpar al usuario.
-- Español neutro institucional; fechas y nombres según la zona horaria configurada.
+- Español neutro institucional; fechas según la zona horaria configurada.
 
 ## 9. Lo que queda prohibido
 
 - Copiar la estética de Moodle, Google Classroom, Notion o cualquier producto reconocible.
-- Ilustraciones genéricas de «estudiantes felices» o gráficos de stock.
-- Animaciones decorativas continuas, parallax en dashboards, contadores falsos.
-- Mostrar métricas sin datos reales detrás.
+- Ilustraciones genéricas de «estudiantes felices», gráficos de stock o emojis decorativos.
+- Contadores, testimonios o métricas sin datos reales detrás.
+- Animar fondos que tapen contenido o bloqueen la lectura; ignorar `prefers-reduced-motion`.
+- Introducir un segundo logotipo, paleta o familia tipográfica.
 
-## 10. Validación pendiente (F6)
+## 10. Validación ejecutada (2026-11-17)
 
-- [ ] Contraste AA de cada combinación token/fondo.
-- [ ] Prueba en 360, 390, 768, 1024 y 1440 px.
-- [ ] Navegación completa por teclado y foco visible.
-- [ ] Zoom al 200 % sin pérdida de contenido.
-- [ ] `prefers-reduced-motion` respetado.
-- [ ] Revisión con lector de pantalla en las pantallas principales.
+- [x] Contraste AA de los pares token/fondo documentados en §3.
+- [x] Capturas reales a 1440×900 y 390×844 de portada, acceso, registro y «Mi cuenta».
+- [x] `prefers-reduced-motion: reduce` detiene las órbitas (`animation-name: none` verificado).
+- [x] Navegación con enlaces reales; sin botones que simulen operaciones inexistentes.
+- [x] Menú de accesibilidad probado en navegador: tamaño (16→18→20 px), contraste alto, órbitas
+      detenidas (`animation-name: none`), enlaces subrayados, persistencia entre páginas,
+      restablecimiento, cierre con `Escape` y retorno de foco al botón.
+- [x] Botón de visibilidad de contraseña probado: alterna el tipo del campo, conserva el valor,
+      actualiza `aria-pressed` y la etiqueta, e intercambia el icono.
+- [ ] Revisión con zoom al 200 % y lector de pantalla en todas las pantallas (pendiente F6).
+- [ ] Prueba en 360, 768 y 1024 px con contenido real de proyectos (pendiente F3/F6).

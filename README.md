@@ -16,16 +16,19 @@ Repositorio: <https://github.com/luis06-op/ARIS-V2> · Estado: ver `docs/ESTADO-
 
 ## Estado actual del repositorio
 
-El repositorio contiene la base documental de F0 y el **esqueleto de aplicación Laravel 13**
-de F1. La aplicación arranca y su suite base pasa, pero **el esquema de ARIS aún no existe**:
-las migraciones del núcleo requieren una instancia MySQL sintética que todavía no está activa.
-Ver `docs/ESTADO-ARIS-2.0.md` y `docs/decisions/ADR-002-stack-y-version-php.md`.
+El repositorio contiene la base documental de F0, el **esqueleto de aplicación Laravel 13** de F1,
+las migraciones del núcleo de identidad y proyectos, y una primera implementación visual de
+portada, acceso, registro y «Mi cuenta» (ADR-008). La suite pasa en SQLite; **falta validar la
+cadena de migraciones en una instancia MySQL sintética** (`aris_v2_db`). Ver
+`docs/ESTADO-ARIS-2.0.md`.
 
 | Fase | Estado |
 |---|---|
 | F0 — Reconocimiento y seguridad del entorno | **COMPLETA** |
-| F1 — Modelado, base de datos y migraciones | **PARCIAL**: esqueleto instalado y probado; migraciones pendientes de MySQL |
-| F2–F10 | No iniciadas |
+| F1 — Modelado, base de datos y migraciones | **PARCIAL**: núcleo migrado y probado en SQLite; pendiente MySQL y el resto del esquema |
+| F2 — Identidad y permisos | **INICIADA**: acceso, registro abierto (PI-002 parcial) y sesión; faltan roles y policies |
+| F3–F5, F7–F10 | No iniciadas |
+| F6 — Diseño y experiencia | **ADELANTADA**: marca, tokens, portada, acceso y armazón de «Mi cuenta» |
 
 ## Estructura del repositorio
 
@@ -71,7 +74,7 @@ starter oficial.
 composer install
 cp .env.example .env
 php8.4 artisan key:generate
-php8.4 artisan migrate          # requiere MySQL activo (aris2_dev)
+php8.4 artisan migrate          # requiere MySQL activo (aris_v2_db)
 npm install
 npm run dev
 php8.4 artisan serve --host=127.0.0.1 --port=8099

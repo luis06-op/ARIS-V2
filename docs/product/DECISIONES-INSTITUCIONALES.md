@@ -48,7 +48,13 @@ de privilegios.
 
 **Recomendación:** opción 1 en el MVP; opción 2 más adelante si la institución lo necesita.
 **Impacto si no se decide:** registro abierto deshabilitado por defecto.
-**Estado:** PENDIENTE.
+**Estado:** **PARCIAL — aprobada por el responsable del proyecto el 2026-11-17.** Se aprueba el
+**autoregistro abierto** (alternativa 3): cualquier persona puede crear su cuenta con nombre,
+correo y contraseña. Las cuentas nuevas no reciben rol institucional ni acceso a proyectos;
+la institución sigue siendo la única que asigna roles, designa responsables de proyecto y
+autoriza evaluaciones, y esa parte de la política continúa **PENDIENTE**. La verificación de
+correo queda pendiente hasta que exista un servicio de envío configurado; mientras tanto, una
+cuenta sin membresía no tiene privilegios.
 
 ---
 
@@ -230,7 +236,7 @@ público); falta la formalización institucional.
 | PI | Estado | Fecha | Responsable | Observaciones |
 |---|---|---|---|---|
 | PI-001 | PENDIENTE | — | — | — |
-| PI-002 | PENDIENTE | — | — | — |
+| PI-002 | PARCIAL | 2026-11-17 | Responsable del proyecto | Autoregistro abierto aprobado; autoridad de roles, responsables de proyecto y evaluaciones sigue pendiente |
 | PI-003 | PENDIENTE | — | — | — |
 | PI-004 | PENDIENTE | — | — | — |
 | PI-005 | PENDIENTE | — | — | — |

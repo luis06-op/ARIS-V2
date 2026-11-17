@@ -3,8 +3,9 @@
 > Documento único de transferencia entre sesiones. Se actualiza al cerrar cada sesión.
 > Formato compacto: no generar informes paralelos.
 
-**Última actualización:** 11 de noviembre de 2026
-**Fase en curso:** F0 cerrada · F1 iniciada (esqueleto Laravel instalado; migraciones pendientes de MySQL)
+**Última actualización:** 17 de noviembre de 2026
+**Fase en curso:** F1 parcial (núcleo migrado en SQLite; falta MySQL) · F2 iniciada (acceso,
+registro y sesión) · F6 adelantada (marca, sistema visual y pantallas base)
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -68,6 +69,12 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
   `vendor/`), con `APP_KEY` generada en `.env` local (no versionado).
 - El frontend del esqueleto es Blade con Vite y Tailwind 4. **Inertia + React + TypeScript se
   integran en F2**, cuando exista la primera pantalla real; `package.json` aún no los incluye.
+- Preparadas migraciones para `institutions`, `users`, `roles`, `institution_memberships`,
+  `membership_roles`, `projects` y `project_memberships`, con claves únicas, índices y FKs.
+- Añadidos modelos y relaciones Eloquent para institución, usuario, roles, membresías y
+  proyectos. No se añadieron catálogos ni usuarios de producción.
+- `users` incorpora estado, idioma y último inicio de sesión. El diccionario indica que la
+  coherencia entre fechas de membresía debe validarse en la capa de dominio.
 
 ## 4. Pruebas ejecutadas
 
@@ -81,9 +88,26 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 | Versión de Laravel | `php8.4 artisan --version` | **APROBADA** — Laravel Framework 13.42.0 |
 | Suite base del esqueleto | `php8.4 artisan test` | **APROBADA** — 2 pruebas, 2 aserciones, 299 ms |
 | Migraciones del esqueleto | `php8.4 artisan migrate` (SQLite de laboratorio) | **APROBADA** — tablas `users`, `cache`, `jobs` |
-| Migraciones de ARIS en MySQL | `php8.4 artisan migrate` sobre `aris2_dev` | **NO EJECUTADA** — sin servidor MySQL activo |
+| Migraciones de ARIS en MySQL | `php8.4 artisan migrate` sobre `aris_v2_db` | **NO EJECUTADA** — sin servidor MySQL activo |
+| Integridad del núcleo en SQLite de pruebas | `php8.4 artisan test` | **APROBADA** — 4 pruebas, 6 aserciones; PHPUnit usa `:memory:` |
+| Sintaxis PHP | `find app database routes config tests -name '*.php' -print0 \| xargs -0 -r -n1 php8.4 -l` | **APROBADA** — todos los archivos revisados sin errores |
+| Enlaces de documentación | `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 33 archivos, 57 referencias, 0 rotas |
+| Enlaces de documentación (16-11-2026) | `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 34 archivos, 57 referencias, 0 rotas |
+| Estado de migraciones de aplicación (16-11-2026) | `php8.4 artisan migrate:status` | **NO VALIDADO** — la conexión local SQLite no tiene tabla `migrations` |
+| Disponibilidad MySQL (16-11-2026) | `mysqladmin --protocol=tcp -h 127.0.0.1 -P 3306 ping` | **NO DISPONIBLE** — no hay servidor escuchando |
 | Renderizado del diagrama Mermaid | `mmdc` / GitHub | **NO EJECUTADA** — herramienta no disponible |
-| QA visual | Playwright / navegador | **NO EJECUTADA** — sin interfaz y sin Playwright |
+| QA visual | Playwright / navegador | **APROBADA (17-11-2026)** — capturas reales de portada, acceso, registro y «Mi cuenta» a 1440×900 y 390×844 |
+| Suite completa (17-11-2026) | `php8.4 artisan test` | **APROBADA** — 19 pruebas, 77 aserciones |
+| Menú de accesibilidad (17-11-2026) | Playwright: abrir, aplicar, persistir, restablecer, `Escape` | **APROBADA** — 4 grupos, 9 opciones, foco devuelto al botón |
+| Botón de visibilidad de contraseña (17-11-2026) | Playwright: clic en `[data-password-toggle]` | **APROBADA** — `password` → `text`, valor conservado, `aria-pressed` y etiqueta actualizados |
+| Acceso con cuenta local (17-11-2026) | Playwright: formulario `/ingresar` | **APROBADA** — redirección a `/cuenta` y datos reales del perfil |
+| Sintaxis PHP (17-11-2026) | `find app database routes config tests -name '*.php' -print0 \| xargs -0 -r -n1 php8.4 -l` | **APROBADA** — sin errores |
+| Estilo PHP (17-11-2026) | `php8.4 vendor/bin/pint --test` | **APROBADA** — sin desviaciones |
+| Compilación de assets (17-11-2026) | `npm run build` | **APROBADA** — CSS 56,5 kB · JS 0,02 kB · fuentes Instrument Sans autohospedadas |
+| Migraciones del núcleo en SQLite de desarrollo (17-11-2026) | `php8.4 artisan migrate` | **APROBADA** — 9 migraciones aplicadas desde cero |
+| Contraste AA de tokens (17-11-2026) | cálculo de luminancia relativa WCAG 2.1 | **APROBADA** — 7 combinaciones ≥ 4,5:1 |
+| Movimiento reducido (17-11-2026) | Playwright `reducedMotion: reduce` + `getComputedStyle(.orb)` | **APROBADA** — `animation-name: none` |
+| Enlaces de documentación (17-11-2026) | `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 35 archivos, 58 enlaces, 0 rotos |
 
 ## 5. Bloqueos activos
 
@@ -91,12 +115,15 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 |---|---|---|---|
 | B1 | ~~Composer ausente~~ | **Resuelto**: Composer 2.11.2 local con SHA-384 verificado | — |
 | B2 | ~~PHP 8.2.12 < 8.3~~ | **Resuelto**: PHP 8.4.23 local (`php8.4`), sin tocar el sistema | — |
-| B3 | Sin servidor MySQL/MariaDB activo | No se pueden ejecutar las migraciones de ARIS ni las pruebas de integridad | Autorizar el arranque del MySQL de XAMPP o crear una instancia sintética dedicada `aris2_dev`/`aris2_test` |
-| B4 | Registro npm no verificado | No se pueden instalar dependencias de frontend ni integrar Inertia/React | Reintentar con red estable; no bloquea las migraciones (backend) |
+| B3 | Sin servidor MySQL/MariaDB activo y conexión única sin confirmar | No se puede validar el esquema con el motor objetivo ni cambiar de forma segura la conexión de aplicación | Confirmar motor, nombre y que la base sea sintética y dedicada; credenciales solo en `.env` local |
+| B4 | ~~Registro npm no verificado~~ | **Resuelto (17-11-2026)**: `npm ping` responde y `npm install` + `npm run build` funcionan | — |
 
 Ninguno de estos bloqueos autoriza a apuntar a una base existente, a desactivar controles ni
-a tocar otros proyectos. La base local actual es **SQLite de laboratorio** en `database/database.sqlite`
-(ignorada por Git): sirve para arrancar el esqueleto, **no** para validar el esquema de ARIS.
+a tocar otros proyectos. La conexión actual del `.env` local es SQLite; PHPUnit usa SQLite
+`:memory:` de forma aislada para pruebas. El documento de arquitectura entregado por el usuario
+define `aris_v2_db`; `.env.example` e instalación local ya usan ese nombre. El `.env` local aún
+usa SQLite y no se ha cambiado porque el endpoint y credenciales MySQL no están disponibles. No
+se ha ejecutado una migración de ARIS en la base local.
 
 ## 6. Decisiones que requieren aprobación humana
 
@@ -109,8 +136,61 @@ a tocar otros proyectos. La base local actual es **SQLite de laboratorio** en `d
 
 ## 7. Siguiente objetivo concreto
 
-**Cerrar la puerta F1 sobre MySQL:** con la instancia sintética `aris2_dev` autorizada y
-activa, escribir las migraciones del núcleo (`institutions`, `users`, `roles`, membresías,
-`projects`) y sus modelos, ejecutar `php8.4 artisan migrate` desde cero y añadir el primer test
-de integridad referencial (`tests/Feature/Database/MigrationIntegrityTest.php`). Nada de
-interfaz todavía.
+**Cerrar F1 en el motor objetivo:** iniciar (con autorización) o conectar una instancia MySQL
+sintética `aris_v2_db`, aplicar la cadena completa de migraciones desde cero y repetir la suite
+de integridad. Después, completar el esquema F1 restante (actividades, asignaciones, entregas,
+documentos, revisión, publicación y auditoría).
+
+---
+
+## 8. Sesión 2026-11-17 — Identidad visual, portada y acceso
+
+**Fase:** F6 adelantada por petición expresa del responsable; F2 iniciada en su parte de sesión.
+
+**Implementado:**
+
+- **Marca vectorial** a partir del logotipo entregado: `public/assets/brand/aris-isotipo.svg`,
+  `aris-logotipo.svg`, `aris-insignia.svg` y `public/favicon.svg`. Vectorizados con contornos
+  propios y `currentColor` (ADR-008).
+- **Sistema visual** en `resources/css/app.css`: tokens de color noche/verde/cian, tipografía
+  Instrument Sans autohospedada, botones, tarjetas, campos, chips, avisos, enlaces, navegación
+  lateral y órbitas animadas con `prefers-reduced-motion`.
+- **Vistas:** `layouts/publico`, `layouts/app`, componentes `marca` y `orbs`; portada
+  `publico/inicio` con héroe, sección «Proyectos publicados» en estado vacío real y bloque «Qué
+  conserva ARIS»; `auth/ingresar`; `auth/registro`; `cuenta`.
+- **Rutas y controladores:** `/` (`InicioController`), `/ingresar`, `/registro`, `/salir`,
+  `/cuenta`; `SessionController`, `RegistrationController`, `AccountController`.
+- **Formularios:** `LoginRequest` con límite de 5 intentos por correo+IP y bloqueo de cuentas no
+  activas; `RegistrationRequest` con correo normalizado, unicidad y contraseña de 8+ con letras y
+  números.
+- **Mensajes en español:** `lang/es/validation.php` para las reglas en uso.
+- **Redirecciones:** invitado → `/ingresar`; autenticado → `/cuenta` (`bootstrap/app.php`).
+- **Campos de contraseña:** componente `components/campo-contrasena` con botón «ojito» que muestra
+  u oculta el valor sin perderlo; `resources/js/password-visibility.js` mantiene `aria-pressed`,
+  la etiqueta accesible y el icono sincronizados.
+- **Menú de accesibilidad:** componente `components/accesibilidad` disponible en el sitio público y
+  en el área privada, con tamaño del texto, contraste alto, movimiento reducido y enlaces
+  subrayados. Las preferencias viven en `localStorage` (`aris.accesibilidad`), nunca en el
+  servidor; `resources/js/accessibility.js` gestiona panel, foco, `Escape`, clic fuera y región
+  `aria-live`.
+- **`PI-002` aprobada parcialmente:** autoregistro abierto autorizado en esta sesión; la
+  asignación de roles y la autoridad de evaluación siguen pendientes.
+- Se eliminó `resources/views/welcome.blade.php` (vista de bienvenida del starter, sin uso tras
+  la nueva portada).
+
+**Decisiones:** ADR-008 (identidad visual) sustituye la propuesta de papel cálido;
+`docs/design/DIRECCION-VISUAL.md` reescrita con la dirección aprobada.
+
+**Datos:** no se crearon usuarios, proyectos ni métricas de demostración en el código ni en las
+pruebas. El responsable del proyecto autorizó una cuenta local de revisión
+(`revision@aris.local`) en la base SQLite de desarrollo para comprobar el acceso; su contraseña
+no se versiona y la cuenta no tiene membresía ni rol institucional.
+
+**Bloqueos:** B3 (MySQL) sigue abierto. La verificación de correo y la recuperación de contraseña
+no se implementaron porque no hay servicio de envío configurado.
+
+**Riesgo asumido:** el registro abierto crea cuentas sin verificar correo; no otorgan privilegios
+porque no existe membresía institucional ni rol asignado.
+
+**Siguiente objetivo:** F1 en MySQL sintética; luego completar el esquema antes de continuar F2
+(roles, policies y recuperación de contraseña).
