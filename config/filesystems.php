@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // ADR-003: ninguna evidencia puede servirse por URL firmada ni por Storage::url().
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

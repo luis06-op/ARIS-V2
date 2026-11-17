@@ -18,4 +18,9 @@ class Institution extends Model
     {
         return $this->hasMany(Project::class);
     }
+
+    public function auditEvents(): HasMany
+    {
+        return $this->hasMany(AuditEvent::class);
+    }
 }
