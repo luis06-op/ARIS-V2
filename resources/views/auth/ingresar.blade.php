@@ -14,10 +14,6 @@
                 <h1 class="text-center text-2xl font-bold tracking-tight">Bienvenido de nuevo</h1>
                 <p class="mt-2 text-center text-sm text-tenue">Ingresa tus credenciales para continuar</p>
 
-                @if (session('status'))
-                    <p class="aris-aviso mt-5" role="status">{{ session('status') }}</p>
-                @endif
-
                 <form method="POST" action="{{ route('sesion.store') }}" class="mt-6 space-y-4" novalidate>
                     @csrf
 
@@ -56,6 +52,10 @@
                         Iniciar sesión
                     </button>
                 </form>
+
+                <p class="mt-3 text-center text-sm">
+                    <a href="{{ route('clave.olvidada') }}" class="aris-enlace-suave">¿Olvidaste tu contraseña?</a>
+                </p>
 
                 <p class="mt-5 text-center text-sm text-tenue">
                     ¿No tienes cuenta?

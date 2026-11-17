@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\InicioController;
@@ -18,6 +19,17 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/registro', [RegistrationController::class, 'store'])
         ->middleware('throttle:20,1')
         ->name('registro.store');
+
+    Route::get('/olvide-password', [PasswordResetController::class, 'create'])
+        ->name('clave.olvidada');
+    Route::post('/olvide-password', [PasswordResetController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('clave.enviar');
+    Route::get('/restablecer-password/{token}', [PasswordResetController::class, 'createReset'])
+        ->name('clave.restablecer');
+    Route::post('/restablecer-password', [PasswordResetController::class, 'storeReset'])
+        ->middleware('throttle:5,1')
+        ->name('clave.actualizar');
 });
 
 Route::post('/salir', [SessionController::class, 'destroy'])
