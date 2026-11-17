@@ -23,6 +23,9 @@
 | Respaldos del proveedor | Existencia y frecuencia reales | Contrato | NO VERIFICADO |
 | Node en producción | **No requerido** | — | — |
 
+La base de aplicación definida para el proyecto es `aris_v2_db`. PHPUnit mantiene sus pruebas
+aisladas en SQLite en memoria; no crea ni utiliza una segunda base persistente.
+
 ## 2. Estructura de despliegue
 
 ```text

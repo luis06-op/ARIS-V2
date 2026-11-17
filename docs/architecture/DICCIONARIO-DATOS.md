@@ -50,7 +50,7 @@
 | user_id | bigint unsigned | no | FK → users, RESTRICT | M | Permanente |
 | status | enum('activa','inactiva','egresado') | no | default `activa` | M | Permanente |
 | joined_at | date | no | — | B | Permanente |
-| left_at | date | sí | `>= joined_at` | M | Permanente |
+| left_at | date | sí | la validación de dominio exige `>= joined_at` | M | Permanente |
 | created_at / updated_at | timestamp | sí | — | B | — |
 | — | — | — | UNIQUE (institution_id, user_id) | — | — |
 
@@ -102,7 +102,7 @@
 | user_id | bigint unsigned | no | FK → users, RESTRICT | M | Permanente |
 | function | enum('lider','instructor','evaluador','aprendiz','observador') | no | — | M | Permanente |
 | assigned_at | date | no | — | B | Permanente |
-| ended_at | date | sí | `>= assigned_at` | M | Permanente |
+| ended_at | date | sí | la validación de dominio exige `>= assigned_at` | M | Permanente |
 | assigned_by | bigint unsigned | sí | FK → users, RESTRICT | M | Permanente |
 | created_at / updated_at | timestamp | sí | — | B | — |
 | — | — | — | UNIQUE (project_id, user_id, function) | — | — |

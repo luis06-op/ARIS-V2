@@ -46,14 +46,14 @@ oficial de PHP de la plataforma y ajustar los comandos.
 
 ## 2. Aislamiento de la base
 
-1. Crear una instancia **exclusiva** del proyecto: `aris2_dev`.
-2. Crear una base separada para pruebas: `aris2_test` (nunca compartida con otros proyectos).
+1. Crear la base única de la aplicación, exclusiva de ARIS: `aris_v2_db`.
+2. PHPUnit usa SQLite en memoria para aislar pruebas automatizadas; no requiere una segunda
+   base persistente.
 3. Nunca reutilizar una base existente «por comodidad».
 4. Credenciales en `.env` local, jamás en el repositorio.
 
 ```sql
-CREATE DATABASE aris2_dev  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE aris2_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE aris_v2_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 `CREATE DATABASE` **no** pertenece a las migraciones: lo ejecuta la persona que aprovisiona.
