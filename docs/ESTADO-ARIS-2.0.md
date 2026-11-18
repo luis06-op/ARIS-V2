@@ -7,6 +7,7 @@
 **Fase en curso:** F1 con esquema verificado en SQLite de pruebas (B3 pendiente) · F2 en desarrollo
 (identidad, roles, jurisdicción, policies y aprovisionamiento CLI) · F3/F4 iniciadas con recorrido
 HTTP privado en borrador · F6 con pantallas Blade del recorrido (QA visual nuevo pendiente)
+· F8 iniciada en integridad de evidencias
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -573,3 +574,28 @@ correctamente. La referencia remota estaba alineada antes de comenzar.
 **Siguiente incremento seguro:** F8, verificación de integridad física de evidencias privadas
 con pruebas de corrupción y rechazo de descarga; después, preparar verificaciones de entrega
 F9. F5/F7 permanecen bloqueadas por PI-003/PI-004/PI-006 y B3 sigue pendiente.
+
+## 16. Sesión 2026-11-18 (continuación) — Integridad operativa F8
+
+**Implementado:** `EvidenceIntegrity`, comprobación de bytes y metadatos antes de descargar,
+stream temporal verificado sin reapertura del archivo original y comando
+`aris:verificar-integridad` de solo lectura, con salida 1 ante incidentes. No cambia estados,
+archivos ni auditoría de evidencias. ADR-012 documenta el mecanismo y sus límites.
+
+**Verificación:** `php8.4 artisan test` — **99 pruebas, 563 aserciones**, todas aprobadas.
+Ocho pruebas nuevas: corrupción del mismo tamaño, truncado/ausencia, metadatos, rutas,
+cuarentena vigente, copia estable y rechazo HTTP. SQLite en memoria y disco falso.
+También aprobados: `php8.4 vendor/bin/pint --test`, lint de 159 archivos PHP,
+`npm run build`, `node scripts/verificar-enlaces-docs.mjs` (39 documentos, 65 enlaces) y
+`git diff --check`. El build conserva el aviso informativo del paquete opcional `fontaine`.
+
+**Publicación previa:** los commits `94dce25`, `d706734` y `48445d4` fueron subidos individualmente
+a `origin/main` con autorización expresa. Se mantiene una única rama local `main`.
+
+**Bloqueos:** B3, PI-003/004/005/006/007/009/010/011; respaldo y restore aún no implementados.
+No se ejecutó verificación de blobs sobre datos existentes, migraciones locales, inicialización
+real, despliegue ni correos. Las pruebas no equivalen a certificar la instalación local.
+
+**Siguiente objetivo concreto:** preparar un paquete reproducible de fuentes con manifiesto
+SHA-256 y verificador independiente, sin incluir secretos, datos, fixtures ni dependencias
+locales; iniciar F9 sin presentar el paquete como despliegue autorizado.

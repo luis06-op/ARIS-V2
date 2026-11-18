@@ -9,7 +9,6 @@ use App\Models\FileBlob;
 use App\Models\Institution;
 use App\Models\User;
 use App\Services\Storage\EvidenceStorage;
-use App\Services\Storage\EvidenceValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -217,7 +216,7 @@ class EvidenceStorageTest extends TestCase
 
     private function servicio(): EvidenceStorage
     {
-        return new EvidenceStorage(new EvidenceValidator);
+        return app(EvidenceStorage::class);
     }
 
     private function documento(): Document

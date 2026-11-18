@@ -232,6 +232,15 @@ class DocumentWorkflowTest extends TestCase
         $this->assertSame('finalizada', $version->fresh()->status);
     }
 
+    public function test_authorized_download_rejects_corrupted_bytes_without_returning_them(): void
+    {
+        $version = $this->createDraft($this->publishGuide());
+        $this->post('/entregas/versiones/'.$version->id.'/evidencias', ['archivo' => UploadedFile::fake()->image('original.png')])->assertRedirect();
+        $document = DocumentVersion::firstOrFail();
+        Storage::disk('local')->put($document->blob->storage_key, str_repeat('X', (int) $document->size_bytes));
+        $this->get('/evidencias/versiones/'.$document->id.'/descargar')->assertNotFound()->assertDontSee('original.png');
+    }
+
     private function createDraft(ActivityVersion $guide): SubmissionVersion
     {
         $assignment = ActivityAssignment::where('activity_version_id', $guide->id)->firstOrFail();

@@ -21,7 +21,7 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 | F5 | Revisiones y trazabilidad | Revisión de versión exacta sin alterar historial | No iniciada |
 | F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | **ADELANTADA** (marca, sistema visual, portada, acceso y «Mi cuenta» según ADR-008) |
 | F7 | Repositorio, búsqueda y publicación | El visitante ve solo lo explícitamente publicado | No iniciada |
-| F8 | Operación, respaldo y seguridad | Restore probado y sin archivos privados accesibles por HTTP | No iniciada |
+| F8 | Operación, respaldo y seguridad | Restore probado y sin archivos privados accesibles por HTTP | **INICIADA** (integridad de blobs y descarga verificada; backup/restore pendientes) |
 | F9 | Hosting y entrega candidata | Paquete reproducible con manifiesto y simulacro | No iniciada |
 | F10 | Piloto institucional | Autorización expresa de la institución | **Fuera de alcance actual** |
 
@@ -235,6 +235,10 @@ Puerta F7: lo que ve el visitante es exactamente lo publicado y autorizado.
 - Pruebas focalizadas: IDOR, traversal, XSS, CSRF, concurrencia, enumeración, borrado.
 
 Puerta F8: restore exitoso y flujos críticos en verde; ningún archivo privado accesible por HTTP.
+
+Estado (18-11-2026): **INICIADA** en integridad. Las descargas verifican los bytes antes de
+servirlos y existe `aris:verificar-integridad`, de solo lectura, probado con corrupción y
+metadatos discordantes. Respaldos, restore y validación operativa real siguen pendientes.
 
 ---
 

@@ -23,7 +23,10 @@ use Throwable;
  */
 final class EvidenceStorage
 {
-    public function __construct(private readonly EvidenceValidator $validator) {}
+    public function __construct(
+        private readonly EvidenceValidator $validator,
+        private readonly EvidenceIntegrity $integrity,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $vinculo
@@ -131,26 +134,22 @@ final class EvidenceStorage
 
     public function download(DocumentVersion $version): StreamedResponse
     {
-        $blob = $version->blob;
-
-        if ($blob->status !== 'disponible' || ! Storage::disk('local')->exists($blob->storage_key)) {
+        $stream = $this->integrity->openVersion($version);
+        if ($stream === false) {
             abort(404);
         }
 
-        $ruta = Storage::disk('local')->path($blob->storage_key);
         $nombre = str_replace('"', '', $this->validator->sanitizarNombre($version->original_name));
 
-        return response()->stream(function () use ($ruta): void {
-            $gestor = fopen($ruta, 'rb');
-
-            if ($gestor === false) {
-                return;
+        return response()->stream(function () use ($stream): void {
+            try {
+                fpassthru($stream);
+            } finally {
+                fclose($stream);
             }
-
-            fpassthru($gestor);
-            fclose($gestor);
         }, 200, [
-            'Content-Type' => $blob->mime,
+            'Content-Type' => $version->mime,
+            'Content-Length' => (string) $version->size_bytes,
             'Content-Disposition' => 'attachment; filename="'.$nombre.'"',
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
