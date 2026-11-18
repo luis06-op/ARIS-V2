@@ -22,7 +22,7 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 | F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | **ADELANTADA** (marca, sistema visual, portada, acceso y «Mi cuenta» según ADR-008) |
 | F7 | Repositorio, búsqueda y publicación | El visitante ve solo lo explícitamente publicado | No iniciada |
 | F8 | Operación, respaldo y seguridad | Restore probado y sin archivos privados accesibles por HTTP | **INICIADA** (integridad de blobs y descarga verificada; backup/restore pendientes) |
-| F9 | Hosting y entrega candidata | Paquete reproducible con manifiesto y simulacro | No iniciada |
+| F9 | Hosting y entrega candidata | Paquete reproducible con manifiesto y simulacro | **INICIADA** (fuentes con manifiesto; instalación y simulacro pendientes) |
 | F10 | Piloto institucional | Autorización expresa de la institución | **Fuera de alcance actual** |
 
 Regla de avance: **una fase a la vez**. Se permite preparar documentación de una fase

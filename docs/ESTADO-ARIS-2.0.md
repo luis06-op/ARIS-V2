@@ -7,7 +7,7 @@
 **Fase en curso:** F1 con esquema verificado en SQLite de pruebas (B3 pendiente) · F2 en desarrollo
 (identidad, roles, jurisdicción, policies y aprovisionamiento CLI) · F3/F4 iniciadas con recorrido
 HTTP privado en borrador · F6 con pantallas Blade del recorrido (QA visual nuevo pendiente)
-· F8 iniciada en integridad de evidencias
+· F8 iniciada en integridad de evidencias · F9 iniciada en empaquetado de fuentes
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -599,3 +599,19 @@ real, despliegue ni correos. Las pruebas no equivalen a certificar la instalaci�
 **Siguiente objetivo concreto:** preparar un paquete reproducible de fuentes con manifiesto
 SHA-256 y verificador independiente, sin incluir secretos, datos, fixtures ni dependencias
 locales; iniciar F9 sin presentar el paquete como despliegue autorizado.
+## 17. Sesión 2026-11-18 — F9: fuentes reproducibles
+
+Implementados constructor y verificador de paquetes ZIP con manifiesto SHA-256,
+lista permitida, límites técnicos, lectura desde HEAD y rechazo de árbol sucio o
+destino existente. ADR-013 registra alcance y procedencia. F9 iniciada, no cerrada.
+
+Pruebas focalizadas: **13 pruebas / 27 aserciones aprobadas**, con repositorios
+sintéticos temporales; reproducibilidad, exclusiones y paquetes manipulados.
+Suite completa: **112 pruebas / 590 aserciones aprobadas**. También aprobados Pint,
+lint PHP, build Vite, enlaces documentales (40 documentos / 65 enlaces) y diff check.
+El build conserva el aviso informativo de `fontaine` opcional.
+
+Siguen pendientes B3 y PI-003/004/005/006/007/009/010/011, QA visual, instalación
+integral, backup/restore y concurrencia MySQL. F1 no está cerrada. F5/F7 bloqueadas.
+Siguiente objetivo: generar dos paquetes del commit publicado, registrar sus hashes
+y continuar con un ensayo aislado de instalación cuando estén satisfechas sus puertas.

@@ -153,3 +153,20 @@ crea `public/storage` ni se enlazan evidencias al DocumentRoot.
 - **No** apuntar a bases de otros proyectos.
 - **No** ejecutar `migrate:fresh` sobre una base que no sea inequívocamente sintética.
 - **No** versionar `.env`, `vendor/`, `node_modules/` ni archivos académicos.
+# Paquete verificable de fuentes (F9 parcial)
+
+Desde un checkout limpio con dependencias PHP instaladas, usar destinos nuevos en un
+directorio existente fuera del repositorio:
+
+```bash
+php8.4 artisan aris:empaquetar-fuentes /ruta/temporal/aris-fuentes.zip
+php8.4 artisan aris:verificar-paquete /ruta/temporal/aris-fuentes.zip
+```
+
+Ambos comandos devuelven 0 al completar; errores de validación devuelven 1. El segundo
+no extrae archivos ni consulta la base. El primero lee fuentes de HEAD, excluye datos,
+dependencias y compilados y muestra el SHA-256 completo del ZIP. Para comprobar
+reproducibilidad, generar otro destino desde el mismo commit y comparar con `sha256sum`.
+El manifiesto verifica coherencia interna, no firma ni procedencia. Conservar el hash
+por un canal confiable. El ZIP requiere instalar dependencias y compilar assets antes
+de evaluar una instalación; no autoriza migraciones ni despliegues.
