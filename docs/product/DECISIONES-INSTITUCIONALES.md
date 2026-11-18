@@ -33,7 +33,19 @@ para proyectos reales.
 entrega debe declarar la asignación y, por lo tanto, la versión exacta de la guía. Se admite una
 excepción solo si la registra un actor autorizado como evento de auditoría
 (`submission.unlinked_exception`) con motivo; el rol concreto que puede autorizar depende de
-`PI-002` y sigue pendiente, por lo que la excepción no se expone en interfaz.
+`PI-002`. En la ampliación del acuerdo del 2026-11-17, el responsable autoriza al instructor
+del proyecto, al administrador y al evaluador. PI-002 versión 4 confirma que el evaluador solo
+puede autorizar dentro de su cohorte y especialidad asignadas. Desde el 18-11-2026 la interfaz
+permite autorizar un borrador sin guía para un aprendiz vigente del proyecto, con auditoría
+completa. Esta autorización no define plazos ni transiciones de PI-003.
+
+**Ampliación aprobada (versión 2, 2026-11-17, responsable del proyecto):** la justificación es
+obligatoria, con un mínimo de 20 caracteres. El evento debe registrar el ID del autorizador,
+el ID del aprendiz o proyecto beneficiado, la fecha y hora exactas, la justificación, la IP y
+un código de transacción. La mención de auditoría en MySQL describe el motor objetivo; no
+autoriza conexiones ni migraciones mientras B3 siga pendiente. Estos requisitos están
+implementados y probados en SQLite en memoria mediante la acción y ruta de excepción PI-001
+(18-11-2026); el motor MySQL sigue pendiente.
 
 ---
 
@@ -52,13 +64,109 @@ de privilegios.
 
 **Recomendación:** opción 1 en el MVP; opción 2 más adelante si la institución lo necesita.
 **Impacto si no se decide:** registro abierto deshabilitado por defecto.
-**Estado:** **PARCIAL — aprobada por el responsable del proyecto el 2026-11-17.** Se aprueba el
+**Estado vigente:** **APROBADA — versión 4, 2026-11-18, responsable del proyecto.** Las
+ampliaciones siguientes conservan la evolución del acuerdo; la versión 4 prevalece sobre
+cualquier facultad anterior incompatible.
+
+**Acuerdo inicial (2026-11-17, aprobación parcial):** se aprueba el
 **autoregistro abierto** (alternativa 3): cualquier persona puede crear su cuenta con nombre,
 correo y contraseña. Las cuentas nuevas no reciben rol institucional ni acceso a proyectos;
 la institución sigue siendo la única que asigna roles, designa responsables de proyecto y
 autoriza evaluaciones, y esa parte de la política continúa **PENDIENTE**. La verificación de
 correo queda pendiente hasta que exista un servicio de envío configurado; mientras tanto, una
 cuenta sin membresía no tiene privilegios.
+
+### Ampliación del acuerdo — versión 2 (2026-11-17)
+
+**Responsable:** responsable del proyecto, mediante instrucción expresa en la sesión.
+**Estado:** PARCIAL; quedan aprobadas las siguientes facultades y pendientes las precisiones
+de alcance enumeradas al final. El registro abierto aprobado se conserva.
+
+| Rol institucional aprobado | Facultades definidas por el responsable |
+|---|---|
+| Administrador | Control total del sistema, configuración de seguridad, almacenamiento y auditoría; gestión de usuarios y asignación, modificación y revocación de roles; creación de proyectos y asignación de instructores; vinculación de aprendices mediante listas institucionales |
+| Evaluador (antes Coordinador) | Analítica global, indicadores, auditoría y reportes; asignación de instructores tutores; revisión y evaluación transversal dentro de su cohorte o especialidad técnica y de entregas de sustentación final |
+| Instructor | Gestión de proyectos asignados; creación de proyectos cuando esté autorizado; vinculación de aprendices a sus proyectos; evaluación y retroalimentación de sus grupos y entregas asignados |
+| Aprendiz | Carga de evidencias, consulta del estado y calificaciones y control de versiones de su proyecto |
+
+**Asignación de roles:** exclusiva del administrador según la definición general del acuerdo.
+La referencia posterior a «Administrador (o Coordinación Académica)» para autorizar evaluadores
+requiere aclaración antes de conceder a otra autoridad capacidad de asignación. «Coordinación
+Académica» no se convierte automáticamente en un quinto rol.
+
+**Autoridad inicial:** el responsable solicita una cuenta inicial de administrador creada durante
+la instalación mediante `setup_admin.php`, con credenciales entregadas al Coordinador del
+Programa de Articulación con la Media Técnica (SENA / CFMA) o al administrador de TI designado
+por la institución. Desde esa autoridad se habilitan cuentas individuales de administradores
+e instructores. Implementado el 18-11-2026 como entrada CLI interactiva, con contraseñas ocultas
+y bloqueo de reinicialización; probado únicamente con SQLite en memoria. No se creó una cuenta
+real ni se versionaron credenciales. El despliegue y B3 siguen sujetos a autorización
+explícita; este acuerdo no permite ejecutar operaciones sobre MySQL.
+
+**Precisiones que quedaron pendientes en la versión 2 (resueltas en la versión 4):**
+
+1. Si Coordinación Académica propone evaluadores y el administrador asigna el rol, o si se
+   pretende autorizar otra vía de asignación, modificando la exclusividad indicada arriba.
+2. Si la asignación de tutores y la excepción PI-001 por un evaluador se limitan también a
+   los proyectos de su cohorte o especialidad autorizada.
+
+### Precisiones aprobadas — versión 3 (2026-11-17)
+
+**Responsable:** responsable del proyecto, mediante instrucción expresa en la sesión.
+**Estado:** PARCIAL; quedan pendientes únicamente las dos precisiones anteriores.
+
+- **Creación de proyectos por instructores:** el administrador es la única autoridad que
+  habilita el permiso explícito `can_create_projects`, a solicitud de Coordinación Académica
+  del SENA. La creación requiere permiso activo y vinculación del instructor a la especialidad
+  del proyecto. Sin ambas condiciones, el servidor debe denegar la creación. No se introduce
+  un quinto rol de «Instructor Líder de Ficha»: el acuerdo permite expresar la habilitación
+  mediante el permiso explícito.
+- **Jurisdicción de evaluadores:** el administrador asigna una matriz de jurisdicción por
+  especialidad técnica/programa y número de ficha/cohorte académica. No existe alcance global
+  predeterminado. La visibilidad, auditoría y evaluación se limitan estrictamente a proyectos
+  y entregables de las fichas y especialidades formalmente asignadas. Esta regla se aplica
+  en las consultas de listados, revisión y analítica, además de la autorización individual
+  de cada recurso y versión. La definición no concede una excepción de alcance a las
+  sustentaciones finales.
+- Los números de ficha y nombres de programas usados como ejemplos en la instrucción no
+  constituyen datos autorizados para poblar la aplicación.
+
+Al registrar esta versión 3, el permiso y la matriz de jurisdicción aún no estaban implementados.
+Su implementación se incorporó el 18-11-2026, después de la confirmación versión 4.
+No se activa calificación mientras PI-004 siga pendiente.
+
+### Confirmación definitiva — versión 4 (2026-11-18)
+
+**Responsable:** responsable del proyecto, mediante confirmación expresa en la sesión.
+**Estado:** APROBADA.
+
+- **Evaluadores:** Coordinación Académica propone candidatos (docentes o jurados); única y
+  exclusivamente el administrador asigna, activa y gestiona el rol en la plataforma.
+- **Tutores:** solo el administrador puede asignar, cambiar o remover tutores. Se revoca
+  expresamente la facultad de asignación atribuida al evaluador en la versión 2. La jurisdicción
+  del evaluador delimita los proyectos y tutores que puede visualizar, auditar y evaluar;
+  no concede gestión de tutores.
+- **Excepción PI-001:** el evaluador solo puede autorizarla para proyectos dentro de su cohorte
+  y especialidad asignadas, con justificación obligatoria y auditoría conforme a PI-001 versión 2.
+  Se conservan los autorizadores previamente aprobados: instructor del proyecto y administrador.
+- Se mantienen los cuatro roles y la habilitación explícita de creación de proyectos por
+  instructores de la versión 3, así como el autoregistro sin privilegios y la autoridad inicial.
+
+La aprobación resuelve la política de autoridad; no equivale a completar toda F2. Desde el
+18-11-2026 hay administración HTTP de membresías, roles, especialidades/fichas, habilitación de
+instructores y jurisdicciones. Las policies protegen proyectos, guías, versiones de entrega y
+descargas privadas. Solo el administrador gestiona tutores; el instructor tutor vincula
+aprendices de la institución. El aprovisionamiento inicial CLI está implementado pero no se ha
+ejecutado en una instalación real. Faltan la importación institucional por lotes y la verificación
+de correo, entre otros pendientes de fase.
+
+**Límites del acuerdo:** las facultades describen la autoridad institucional, no una aprobación
+de funcionalidades dependientes de otras políticas. Las calificaciones, transiciones académicas,
+acceso histórico, publicación, formatos adicionales y cuotas siguen sujetos a PI-003, PI-004,
+PI-005, PI-006 y PI-010. El control administrativo sobre MySQL no levanta B3 ni concede al
+agente permiso para tocar bases existentes. Los permisos deben comprobarse en servidor sobre
+el recurso y su versión exacta, con membresía vigente; las rutas sensibles se exponen únicamente
+con reglas de alcance explícitas y pruebas negativas.
 
 ---
 
@@ -244,8 +352,8 @@ público); falta la formalización institucional.
 
 | PI | Estado | Fecha | Responsable | Observaciones |
 |---|---|---|---|---|
-| PI-001 | APROBADA | 2026-11-17 | Responsable del proyecto | Entrega vinculada a versión concreta de guía; excepción autorizada y auditada; el rol autorizador depende de PI-002 |
-| PI-002 | PARCIAL | 2026-11-17 | Responsable del proyecto | Autoregistro abierto aprobado; autoridad de roles, responsables de proyecto y evaluaciones sigue pendiente |
+| PI-001 | APROBADA | 2026-11-17 | Responsable del proyecto | Versión 2: instructor del proyecto, administrador o evaluador; motivo de al menos 20 caracteres, beneficiario, fecha, IP y código de transacción; PI-002 versión 4 confirma la jurisdicción del evaluador |
+| PI-002 | APROBADA | 2026-11-18 | Responsable del proyecto | Versión 4: Coordinación propone evaluadores y solo administrador gestiona roles y tutores; evaluador autoriza PI-001 únicamente dentro de su cohorte y especialidad |
 | PI-003 | PENDIENTE | — | — | — |
 | PI-004 | PENDIENTE | — | — | — |
 | PI-005 | PENDIENTE | — | — | — |

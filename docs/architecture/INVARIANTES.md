@@ -12,10 +12,10 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 |---|---|---|---|---|
 | INV-001 | Un usuario no puede autenticarse con estado `inactivo` o `bloqueado`, aunque su contraseña sea correcta | `AuthenticationTest::test_una_cuenta_inactiva_no_puede_iniciar_sesion` | F2 | **APROBADA** (17-11-2026) |
 | INV-002 | La sesión se regenera tras autenticarse y se invalida por completo al cerrar sesión | `AuthenticationTest::rotacion_de_sesion_y_logout` | F2 | PENDIENTE |
-| INV-003 | Un actor solo accede a un recurso si su membresía en el proyecto está vigente y su rol lo permite | `ProjectAccessTest::acceso_cruzado_denegado` | F2 | PENDIENTE |
-| INV-004 | Cambiar un ID en la URL no concede acceso; la respuesta es 403/404 sin filtrar datos | `ProjectAccessTest::idor_por_id_ajeno` | F2 | PENDIENTE |
+| INV-003 | Un actor solo accede con membresía institucional vigente y asignación de proyecto, jurisdicción o autoridad administrativa correspondiente | `ProjectAccessTest` y `DocumentWorkflowTest` | F2 | **APROBADA** (HTTP, SQLite, 18-11-2026) |
+| INV-004 | Cambiar un ID en la URL no concede acceso; la respuesta es 403/404 sin filtrar datos | `ProjectAccessTest::test_admin_is_isolated_and_duplicate_codes_and_validation_do_not_create_projects` y `DocumentWorkflowTest::test_other_student_same_project_cannot_read_or_mutate_exact_submission_or_file` | F2 | **APROBADA** (HTTP, SQLite, 18-11-2026) |
 | INV-005 | Una persona puede tener varios roles sin que uno sobrescriba a otro | `RoleAuthorizationTest::roles_multiples` | F2 | PENDIENTE |
-| INV-006 | El aprovisionamiento de usuarios no está abierto al público; solo un rol autorizado crea cuentas | `RoleAuthorizationTest::registro_abierto_deshabilitado` | F2 | PENDIENTE |
+| INV-006 | El registro abierto no concede roles ni proyectos; solo el administrador asigna roles (PI-002 aprobada) | `RegistrationTest` y `AccessManagementTest` | F2 | **APROBADA** (18-11-2026) |
 
 ## 2. Integridad académica
 
@@ -33,7 +33,7 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
 | ID | Invariante | Prueba prevista | Fase | Estado |
 |---|---|---|---|---|
 | INV-020 | Ningún archivo de evidencia es accesible por URL directa ni por `public/storage` | `EvidenceStorageTest::test_una_evidencia_valida_se_guarda_fuera_de_public_y_queda_registrada` | F4 | **APROBADA** (17-11-2026) |
-| INV-021 | La descarga exige autorización sobre la versión exacta del documento | `AuthorizedDownloadTest::descarga_version_ajena_denegada` | F4 | PENDIENTE |
+| INV-021 | La descarga exige autorización sobre la versión exacta del documento | `DocumentWorkflowTest::test_exact_document_version_without_link_cannot_inherit_other_versions_permission` | F4 | **APROBADA** (HTTP, SQLite, 18-11-2026) |
 | INV-022 | El archivo servido coincide byte a byte con el cargado y su SHA-256 es igual | `EvidenceStorageTest::test_una_evidencia_valida_se_guarda_fuera_de_public_y_queda_registrada` y `test_la_descarga_devuelve_los_bytes_y_cabeceras_seguras` | F4 | **APROBADA** (17-11-2026) |
 | INV-023 | El nombre físico no deriva del nombre original y no admite `..`, rutas absolutas ni separadores | `EvidenceStorageTest::test_un_nombre_con_ruta_se_sanea_y_nunca_se_usa_como_ruta` | F4 | **APROBADA** (17-11-2026) |
 | INV-024 | Un tipo no permitido se rechaza por MIME real, no solo por extensión | `EvidenceStorageTest::test_un_contenido_que_no_es_pdf_se_rechaza_sin_dejar_metadato` y `test_un_formato_no_permitido_se_rechaza` | F4 | **APROBADA** (17-11-2026) |

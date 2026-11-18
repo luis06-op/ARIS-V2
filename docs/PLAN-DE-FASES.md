@@ -15,9 +15,9 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 |---|---|---|---|
 | F0 | Reconocimiento y seguridad del entorno | Entorno verificado, proyecto aislado, stack decidido | **COMPLETA** |
 | F1 | Modelado y base de datos | Instalación desde cero con una sola cadena de migraciones | **PARCIAL** (migraciones del núcleo creadas y suite en verde sobre SQLite; falta MySQL) |
-| F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | **INICIADA** (acceso, registro y sesión; faltan roles, policies y pruebas negativas) |
-| F3 | Proyectos, guías y asignaciones | Asignación verificable e infalsificable | No iniciada |
-| F4 | Entregas, archivos privados y versionado | Flujo real proyecto → guía → entrega → archivo → versión | No iniciada |
+| F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | **EN DESARROLLO** (roles, jurisdicción, policies, aprovisionamiento CLI y pruebas HTTP; falta verificación de correo e importación por lotes) |
+| F3 | Proyectos, guías y asignaciones | Asignación verificable e infalsificable | **INICIADA** (proyectos, tutores, aprendices y guías versionadas con asignación al proyecto) |
+| F4 | Entregas, archivos privados y versionado | Flujo real proyecto → guía → entrega → archivo → versión | **INICIADA** (recorrido HTTP en borrador, PI-001 y descarga de versión exacta) |
 | F5 | Revisiones y trazabilidad | Revisión de versión exacta sin alterar historial | No iniciada |
 | F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | **ADELANTADA** (marca, sistema visual, portada, acceso y «Mi cuenta» según ADR-008) |
 | F7 | Repositorio, búsqueda y publicación | El visitante ve solo lo explícitamente publicado | No iniciada |
@@ -33,6 +33,12 @@ investigación de solo lectura.
 > completar el esquema F1 y su documentación, pero **no cierra la puerta F1**. El código de F2+
 > requiere autorización explícita para avanzar sin la validación MySQL, y los flujos sensibles
 > de F3–F7 siguen bloqueados por `PI-001`…`PI-010`.
+
+> **Actualización (18-11-2026):** el usuario autorizó continuar las demás fases con B3 pendiente.
+> PI-002 versión 4 está aprobada y se implementó el recorrido privado F2–F4. Las puertas no se
+> declaran cerradas: siguen pendientes aprovisionamiento real autorizado, QA integral, MySQL y las
+> políticas de transiciones, revisión/calificación y publicación. F5/F7 no se activan por esta
+> autorización general de desarrollo.
 
 ---
 
@@ -110,8 +116,9 @@ verde + versionado explicado.
 Estado: **PARCIAL**. Esqueleto Laravel 13.42.0 instalado; **el esquema completo ya existe**:
 institutions, users, roles, membresías, proyectos, actividades, guías y asignaciones, entregas y
 sus versiones, blobs, documentos y sus versiones/vínculos, revisiones y comentarios,
-publicaciones y sus eventos, y auditoría. Las 23 migraciones propias se aplican desde cero en
-SQLite y la suite de integridad está en verde. Según instrucción del responsable, **B3 queda
+publicaciones y sus eventos, y auditoría. Con la ampliación del 18-11-2026 hay 28 migraciones en
+la cadena (25 de ARIS y 3 del esqueleto), incluyendo especialidades, fichas y jurisdicción.
+Se aplican desde cero en SQLite de pruebas. Según instrucción del responsable, **B3 queda
 pendiente**: no se valida en MySQL sintética (`aris_v2_db`), por lo que la puerta F1 no se declara
 cerrada. Las restricciones `CHECK` se difieren a la capa de dominio (ADR-009). El frontend
 sigue siendo Blade + Vite + Tailwind 4, no Inertia/React.
@@ -122,9 +129,10 @@ sigue siendo Blade + Vite + Tailwind 4, no Inertia/React.
 
 - Autenticación oficial mantenida por el framework (login, logout, reset por token, CSRF,
   rate limit, rotación de sesión).
-- Aprovisionamiento institucional: el **autoregistro está aprobado** (`PI-002`, parcial); la
-  asignación de roles, la designación de responsables y la autorización de evaluaciones siguen
-  pendientes.
+- Aprovisionamiento institucional: **PI-002 aprobada, versión 4 (18-11-2026)**. Autoregistro
+  sin privilegios; solo administrador gestiona roles y tutores. Evaluadores limitados a su
+  jurisdicción de especialidad y ficha/cohorte; creación por instructor con permiso explícito
+  y vinculación a la especialidad.
 - Roles institucionales + roles por proyecto; `Policies`/`Gates` por recurso.
 - Pruebas negativas: aprendiz contra proyecto ajeno, instructor no asignado, evaluador no
   autorizado, anónimo, IDOR por cambio de ID.
@@ -134,8 +142,12 @@ Puerta F2: ningún recurso accesible adivinando IDs ni alterando el request.
 Estado: **INICIADA** (17-11-2026). Implementados el acceso, el registro abierto aprobado, el
 cierre de sesión con invalidación, el límite de intentos, la pantalla «Mi cuenta» con datos reales
 y la **recuperación de contraseña** por correo con mailer `log` (`PI-008` aprobada). Faltan roles
-institucionales, `Policies`/`Gates`, verificación de correo y las pruebas negativas de
-autorización por recurso.
+institucionales en una instalación real y verificación de correo. El 18-11-2026 se implementaron
+policies sobre proyectos, guías, versiones de entrega y documento; gestión HTTP de roles y
+tutores, matriz de jurisdicción y permiso de creación, con pruebas positivas y negativas.
+El aprovisionamiento inicial CLI está implementado y probado en memoria; no se ejecutó sobre
+la instalación local. La importación por lotes sigue pendiente; la puerta F2 sigue abierta.
+Las nuevas migraciones no se aplicaron sobre la base local existente.
 
 ---
 
@@ -149,9 +161,11 @@ autorización por recurso.
 
 Puerta F3: un actor autorizado crea proyecto y guía y asigna; otro no puede falsificarlo.
 
-Estado: **PREPARADA (estructura)**. Existen el esquema, los modelos y la regla de dominio que
-impide editar una versión publicada de guía (`UpdateGuideVersion`, INV-011). No hay CRUD ni
-interfaz: F2 no está cerrada y `PI-002` no define quién puede asignar.
+Estado: **INICIADA** (18-11-2026). Listado filtrado, creación y edición de proyectos con bloqueo
+optimista; tutores designados exclusivamente por administrador y aprendices vinculados por tutor.
+Guías con borradores, publicación interna y asignación de versión exacta al proyecto; editar una
+publicada crea otra versión. Hay pantallas Blade y pruebas HTTP. Faltan bajas/archivo, asignación
+individual/grupal, importación por lotes y QA integral; la puerta F3 no se declara cerrada.
 
 ---
 
@@ -166,12 +180,12 @@ interfaz: F2 no está cerrada y `PI-002` no define quién puede asignar.
 
 Puerta F4: recorrido real de punta a punta sin sobrescritura histórica.
 
-Estado: **PREPARADA (estructura y servicio)**. `PI-001` aprobada: `SubmissionLink` y
-`CreateSubmission` exigen asignación vigente y versión exacta de la guía, y registran la
-excepción autorizada en auditoría. El servicio privado de evidencias valida MIME real, firma,
-tamaño y SHA-256, guarda en `storage/app/private` y ofrece descarga con cabeceras seguras y
-reconciliación (`aris:verificar-storage`). No hay rutas HTTP ni interfaz: la autorización depende
-de `PI-002` y los límites formales de `PI-010` siguen pendientes (se aplican los conservadores).
+Estado: **INICIADA** (18-11-2026). Recorrido HTTP probado: guía asignada → entrega en borrador →
+archivo privado → descarga exacta → nueva versión. Solo el último borrador admite cargas, sin
+sobrescribir las anteriores. Excepción PI-001 con policy, justificación, beneficiario, IP del
+servidor, fecha y UUID auditados. Se reutiliza el servicio privado y sus límites conservadores.
+Faltan transiciones académicas (PI-003), decisiones formales de PI-010, pruebas de fallos de
+infraestructura y concurrencia en MySQL. La puerta F4 no se declara cerrada.
 
 ---
 

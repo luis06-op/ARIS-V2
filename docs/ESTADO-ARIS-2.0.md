@@ -3,10 +3,10 @@
 > Documento único de transferencia entre sesiones. Se actualiza al cerrar cada sesión.
 > Formato compacto: no generar informes paralelos.
 
-**Última actualización:** 17 de noviembre de 2026
-**Fase en curso:** F1 con esquema completo en SQLite (B3 pendiente por instrucción) · F2 iniciada
-(acceso, registro, sesión y recuperación de contraseña) · F3/F4 preparadas en dominio y servicio ·
-F6 adelantada (marca, sistema visual y pantallas base)
+**Última actualización:** 18 de noviembre de 2026
+**Fase en curso:** F1 con esquema verificado en SQLite de pruebas (B3 pendiente) · F2 en desarrollo
+(identidad, roles, jurisdicción, policies y aprovisionamiento CLI) · F3/F4 iniciadas con recorrido
+HTTP privado en borrador · F6 con pantallas Blade del recorrido (QA visual nuevo pendiente)
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -68,8 +68,8 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
 - **Esqueleto de aplicación Laravel 13.42.0** integrado en la raíz (`artisan`, `app/`,
   `bootstrap/`, `config/`, `database/`, `public/`, `resources/`, `routes/`, `tests/`,
   `vendor/`), con `APP_KEY` generada en `.env` local (no versionado).
-- El frontend del esqueleto es Blade con Vite y Tailwind 4. **Inertia + React + TypeScript se
-  integran en F2**, cuando exista la primera pantalla real; `package.json` aún no los incluye.
+- El frontend real es **Blade + Vite + Tailwind 4 + JavaScript vanilla**. No se incorporaron
+  Inertia, React ni TypeScript. AGENTS.md quedó alineado con este stack el 18-11-2026.
 - Preparadas migraciones para `institutions`, `users`, `roles`, `institution_memberships`,
   `membership_roles`, `projects` y `project_memberships`, con claves únicas, índices y FKs.
 - Añadidos modelos y relaciones Eloquent para institución, usuario, roles, membresías y
@@ -88,7 +88,7 @@ Detalle de agentes en `docs/AGENTES-DISPONIBLES.md`.
   queda con `serve => false`, sin `public/storage` ni URLs firmadas.
 - **Reglas de dominio (PI-001):** `SubmissionLink` exige asignación vigente y versión publicada;
   `CreateSubmission` audita la excepción; `UpdateGuideVersion` conserva las versiones publicadas
-  creando una nueva. Sin interfaz ni autorización HTTP: `PI-002` sigue pendiente.
+  creando una nueva. La conexión HTTP autorizada se implementó el 18-11-2026 (véase sección 14).
 
 ## 4. Pruebas ejecutadas
 
@@ -142,7 +142,9 @@ a tocar otros proyectos. La conexión actual del `.env` local es SQLite; PHPUnit
 `:memory:` de forma aislada para pruebas. El documento de arquitectura entregado por el usuario
 define `aris_v2_db`; `.env.example` e instalación local ya usan ese nombre. El `.env` local aún
 usa SQLite y no se ha cambiado porque el endpoint y credenciales MySQL no están disponibles. No
-se ha ejecutado una migración de ARIS en la base local.
+se aplicaron las cinco migraciones nuevas de jurisdicción sobre la base local en esta
+continuación; se verificaron únicamente en SQLite en memoria. El núcleo previo sí fue migrado
+en las sesiones del 17-11-2026, según las entradas históricas.
 
 ## 6. Decisiones que requieren aprobación humana
 
@@ -150,7 +152,10 @@ se ha ejecutado una migración de ARIS en la base local.
 - **Aprobadas el 17-11-2026:** `PI-001` (entrega vinculada a versión concreta de guía, con
   excepción autorizada y auditada) y `PI-008` (recuperación por correo con token estándar y mailer
   `log`, sin envío real).
-- **Pendientes:** `PI-002` (autoridad para asignar roles y responsables), `PI-003`, `PI-004`,
+- **PI-002 aprobada (18-11-2026, versión 4):** solo administrador gestiona roles y tutores;
+  Coordinación propone evaluadores; el evaluador autoriza PI-001 solo dentro de su cohorte y
+  especialidad. Permiso explícito de creación para instructores vinculados a la especialidad.
+- **Pendientes:** `PI-003`, `PI-004`,
   `PI-005`, `PI-006`, `PI-007`, `PI-009`, `PI-010` y `PI-011`. Ninguna se implementa con valores
   por defecto inventados; sus flujos permanecen deshabilitados.
 - **Publicación del repositorio:** público en `github.com/luis06-op/ARIS-V2` con autorización
@@ -161,10 +166,12 @@ se ha ejecutado una migración de ARIS en la base local.
 
 **B3 queda pendiente por instrucción expresa del responsable (17-11-2026).** No se conecta ni se
 migra ninguna instancia MySQL, por lo que la puerta F1 no se declara cerrada. El avance a F2+ fue
-autorizado en la misma sesión. El siguiente objetivo concreto es resolver `PI-002` (quién asigna
-roles y responsables) para poder implementar `Policies`/`Gates` y retirar las excepciones de
-dominio que hoy solo se ejecutan desde acciones internas. Después vendrá el CRUD de F3/F4 con la
-interfaz real, siempre sin datos de demostración.
+autorizado en la misma sesión. PI-002 quedó aprobada en su versión 4 (18-11-2026) y el recorrido
+privado F2–F4 está implementado y probado en borrador. **Siguiente objetivo concreto:** resolver
+PI-003 (estados, actores y condiciones de entrega/corrección/cierre) para implementar las
+transiciones académicas sin inventarlas. PI-004 será necesaria antes de activar evaluación y
+PI-006 antes de publicación pública. La activación local de las cinco migraciones nuevas y del
+administrador inicial requiere autorización; no se ejecutó en esta sesión.
 
 ---
 
@@ -337,3 +344,232 @@ la versión exacta queda para cuando `PI-002` defina roles. Ningún borrado de b
 
 **Siguiente objetivo:** `PI-002` para conectar `Policies`/`Gates` con las rutas de carga, descarga,
 proyectos y entregas.
+
+---
+
+## 12. Sesión 2026-11-17 (continuación 4) — Autoridad institucional, acuerdo versión 2
+
+**Fase:** F2; F1 continúa abierta por B3 y F3/F4 siguen preparadas sin rutas sensibles.
+
+**Implementado:** documentación del acuerdo institucional versión 2 en
+`docs/product/DECISIONES-INSTITUCIONALES.md`. Aprobados cuatro roles (administrador, evaluador,
+instructor y aprendiz), facultades de gestión y designación de la autoridad inicial durante la
+instalación. PI-001 incorpora autorizadores, motivo mínimo de 20 caracteres, beneficiario,
+fecha y hora, IP y código de transacción. Estos requisitos nuevos todavía no están implementados
+en código. PI-002 sigue parcial por las precisiones de alcance y la contradicción entre la
+asignación exclusiva por administrador y la alternativa de Coordinación Académica.
+
+**Verificaciones:** lectura de los cuatro documentos rectores y comprobación Git mediante
+`git status --short --branch`, `git branch --list`, `git log -1 --oneline` y
+`git rev-parse origin/main`: al inicio, árbol limpio, única rama `main`, HEAD y referencia local
+`origin/main` en `4acffb0`. No se consultó el remoto. Suite PHP, Pint, lint y compilación frontend
+no ejecutados en esta continuación documental; los resultados anteriores son históricos.
+`node scripts/verificar-enlaces-docs.mjs`: APROBADA, 36 documentos y 61 enlaces sin roturas.
+`git diff --check`: APROBADA, sin errores de espacios.
+
+**Seguridad y datos:** no se tocaron bases ni conexiones, no se crearon cuentas, no se expusieron
+rutas ni se enviaron correos. No se ejecutó despliegue, push ni commit. Los cambios documentales
+quedan pendientes de commit; se requiere petición del usuario para realizarlo.
+
+**Bloqueos y decisiones pendientes:** B3; precisiones de PI-002; PI-003, PI-004, PI-005, PI-006,
+PI-007, PI-009, PI-010 y PI-011 continúan pendientes. La mención de calificaciones, formatos y
+control administrativo de MySQL no modifica esos bloqueos.
+
+**Siguiente objetivo concreto:** confirmar quién autoriza la creación de proyectos por instructores
+y cómo se asigna y limita el alcance de evaluadores (incluyendo tutores, sustentaciones y PI-001),
+así como aclarar el papel de Coordinación Académica en la asignación del rol.
+
+### Continuación del acuerdo — versión 3
+
+**Fase:** F2. Registrada la autorización exclusiva del administrador para habilitar
+`can_create_projects` a solicitud de Coordinación Académica, exigiendo vinculación del
+instructor a la especialidad. Registrada la matriz de jurisdicción de evaluadores por
+programa/especialidad y ficha/cohorte, asignada por el administrador, con filtrado estricto
+de consultas y sin acceso global predeterminado. Implementación de permisos aún pendiente.
+
+**Verificaciones:** cambio exclusivamente documental; suite PHP, Pint, lint y build no ejecutados
+en esta continuación. No se accedió a bases ni se crearon datos o cuentas. Sin commit ni push.
+`node scripts/verificar-enlaces-docs.mjs`: APROBADA (36 documentos, 61 enlaces sin roturas).
+`git diff --check`: APROBADA.
+
+**Bloqueos:** PI-002 sigue parcial; B3 y las demás políticas pendientes conservan su estado.
+
+**Siguiente objetivo concreto:** confirmar si Coordinación propone evaluadores y el administrador
+formaliza su rol, y si la jurisdicción del evaluador también limita la asignación de tutores y
+la autorización de excepciones PI-001; con ello completar la definición de autorización F2.
+
+---
+
+## 13. Sesión 2026-11-18 — PI-002 aprobada y primeras policies institucionales
+
+**Fase:** F2 en desarrollo; no cerrada. F1 permanece abierta por B3.
+
+**Acuerdo:** PI-002 versión 4 aprobada por el responsable. Coordinación propone evaluadores y
+solo el administrador gestiona su rol. Solo el administrador asigna, cambia o remueve tutores;
+esta confirmación sustituye la facultad anterior del evaluador. El evaluador autoriza PI-001
+exclusivamente dentro de su cohorte y especialidad, con justificación y auditoría obligatorias.
+
+**Implementado:**
+
+- `app/Domain/Identity/InstitutionalAuthority.php`: consulta de autoridad administrativa en
+  la institución del recurso, con usuario e institución activos y membresía vigente.
+- `app/Policies/InstitutionPolicy.php`: `manageRoles` exclusiva del administrador.
+- `app/Policies/ProjectPolicy.php`: `manageTutors` exclusiva del administrador. Ser propietario
+  del proyecto no concede esta facultad.
+- Descubrimiento convencional de policies por Laravel y evaluación mediante Gate. Sin bypass
+  global para administradores. Revocaciones y bloqueos se consultan en base aunque existan
+  relaciones previamente cargadas.
+- `tests/Feature/Auth/InstitutionalAuthorizationTest.php`: 7 pruebas nuevas (42 aserciones)
+  sobre permisos positivos, denegación por rol, anónimo, propietario sin membresía, recurso de
+  otra institución, revocación, vigencia, bloqueos y ausencia de permisos implícitos.
+- `docs/decisions/ADR-010-autorizacion-institucional-explicita.md` documenta la decisión técnica.
+
+**Verificaciones ejecutadas:**
+
+| Comando | Resultado |
+|---|---|
+| `php8.4 artisan test` | APROBADA — 61 pruebas, 239 aserciones |
+| `php8.4 vendor/bin/pint --test` | APROBADA |
+| `find app config database routes tests -name '*.php' -print0 \| xargs -0 -r -n1 php8.4 -l` | APROBADA — sin errores |
+| `npm run build` | APROBADA — aviso informativo del paquete opcional `fontaine` |
+| `node scripts/verificar-enlaces-docs.mjs` | APROBADA — 37 documentos, 63 enlaces sin roturas |
+| `git diff --check` | APROBADA |
+
+**Seguridad y datos:** PHPUnit usa SQLite en memoria; no se migró ni consultó la base de
+desarrollo ni MySQL. Los registros sintéticos existen únicamente en pruebas. Sin cuentas
+semilla, rutas HTTP nuevas, correos reales, commit, push ni despliegue. El árbol conserva los
+cambios de esta sesión y la documentación pendiente de las confirmaciones anteriores.
+
+**Pendiente de implementación:** matriz de jurisdicción, permiso explícito de creación,
+administración efectiva de roles y tutores, aprovisionamiento inicial, autorización sobre
+versiones exactas, ampliación de auditoría PI-001 y conexión HTTP. Estas primeras policies
+no constituyen todavía protección del recorrido HTTP ni cierre de la puerta F2.
+
+**Bloqueos:** B3 y PI-003, PI-004, PI-005, PI-006, PI-007, PI-009, PI-010 y PI-011 conservan su
+estado. PI-002 ya no bloquea el desarrollo de autorización; la calificación y los plazos
+académicos no quedan aprobados por la confirmación de autoridad.
+
+**Siguiente objetivo concreto:** añadir la persistencia de especialidad/ficha, jurisdicción
+asignada por administrador y permiso de creación para instructores, con pruebas negativas de
+cruce de cohorte y especialidad; después completar las policies sobre versiones exactas.
+
+---
+
+## 14. Sesión 2026-11-18 (continuación) — Recorrido privado F2/F3/F4 y pantallas F6
+
+**Fase / autorización:** el usuario pidió continuar las demás fases. Se avanzó en F2–F4 y sus
+pantallas F6 con B3 pendiente. No se declaran cerradas las puertas de fase ni se activan F5/F7.
+
+**Implementado:**
+
+- Cinco migraciones: especialidades, fichas con cohorte, vínculos de instructor con permiso
+  explícito, jurisdicciones de evaluador y `projects.ficha_id` nullable para registros previos.
+  La cadena actual tiene **28 archivos de migración (25 ARIS y 3 base)**; se corrige así el
+  cómputo histórico que denominaba «propias» a las 23 migraciones anteriores.
+- Consultas `VisibleProjects` y `CreatableFichas`: filtrado SQL por institución, rol, membresía
+  y jurisdicción antes de mostrar listados u opciones. Sin alcance global del evaluador.
+- `/accesos`: vinculación de cuentas registradas, roles, catálogo de especialidades/fichas,
+  permiso de creación por instructor y jurisdicción del evaluador. Solo administrador; cambios
+  transaccionales y auditados.
+- `/proyectos`: listado paginado, creación con ficha autorizada, consulta y edición de título y
+  descripción con `lock_version`. Institución, propietario y estado no se aceptan del cliente.
+  Crear no autodesigna tutor; solo el administrador lo designa o retira. El instructor tutor
+  vincula o retira aprendices de su institución. No hay borrado ni archivo de proyectos.
+- Guías: creación de borrador, lectura por versión, edición, publicación interna y asignación
+  al proyecto. Una versión publicada permanece inmutable; editarla crea otro borrador. Se
+  corrigió la relectura bajo bloqueo y el checksum de las ediciones de borrador.
+- Entregas: creación de borradores contra asignación vigente y versión exacta de guía,
+  consulta de historial, nuevas versiones y cargas privadas. Solo la última versión en borrador
+  admite archivos; las anteriores no se sobrescriben. Los estados académicos no se activan.
+- `DocumentVersionPolicy`: descarga HTTP de la versión exacta vinculada a una versión de
+  entrega autorizada, verificando coherencia de documento, entrega, proyecto e institución.
+  No se heredan permisos de otra versión del mismo documento.
+- Excepción PI-001: ruta específica y Gate en la acción interna; justificación de 20–2000
+  caracteres, autorizador y beneficiario, proyecto, timestamp, UUID de transacción e IP obtenida
+  del request del servidor. Evaluador limitado a su ficha/especialidad; aprendiz no se autoriza
+  a sí mismo. La excepción produce un borrador sin guía, no una transición extemporánea.
+- `setup_admin.php` exclusivamente CLI y `aris:inicializar-administracion`: institución y
+  autoridad reales introducidas por el operador, contraseña oculta y confirmada, hash y auditoría
+  transaccionales; bloqueo de reinicialización incluso si después se retira el rol inicial.
+  Implementado y probado en memoria; no se ejecutó para crear una cuenta real.
+- Pantallas Blade con tokens existentes, estados vacíos reales, formularios CSRF, texto escapado,
+  navegación adaptable, paginación y errores 403/404 en español. «Mi cuenta» refleja vigencia.
+- ADR-011, diccionario, ERD, invariantes, plan, políticas e instalación actualizados. AGENTS.md
+  corregido para reflejar el frontend real y sus comandos disponibles.
+
+**Pruebas y verificaciones reales:**
+
+| Comando / comprobación | Resultado |
+|---|---|
+| `php8.4 artisan test` | **APROBADA — 91 pruebas, 533 aserciones** |
+| `php8.4 vendor/bin/pint --test` | **APROBADA** |
+| `find app config database routes tests lang -name '*.php' -print0 \| xargs -0 -r -n1 php8.4 -l` | **APROBADA** — sin errores |
+| `php8.4 -l setup_admin.php` | **APROBADA** |
+| `php8.4 setup_admin.php --help` | **APROBADA** — solo ayuda, no inicialización |
+| `npm run build` | **APROBADA** — aviso informativo del paquete opcional `fontaine` |
+| `node scripts/verificar-enlaces-docs.mjs` | **APROBADA** — 38 documentos, 65 enlaces sin roturas |
+| `git diff --check` | **APROBADA** |
+| Rollback de las cinco migraciones, reaplicación y ejecución idempotente | **APROBADA** dentro de `JurisdictionIntegrityTest`, solo SQLite en memoria |
+| QA visual nuevo en navegador | **NO EJECUTADA** — las pruebas HTTP sí renderizan las nuevas vistas |
+
+Las 30 pruebas añadidas sobre la suite de la sección 13 cubren gestión de accesos, jurisdicción,
+IDOR por recurso y versión, tutor no asignado, aprendiz ajeno, anónimo, revocación, bloqueo,
+concurrencia optimista de edición, límites de archivo, XSS, bytes/hash de descarga, PI-001 y
+aprovisionamiento inicial. Durante el desarrollo falló el recorrido al admitir resumen nulo:
+se corrigió validación/formulario/acción para respetar el esquema existente (obligatorio, 500
+caracteres) y la suite final está en verde. La concurrencia real en MySQL no se verificó.
+
+**Seguridad y datos:** fixtures únicamente en SQLite en memoria y archivos en `Storage::fake`.
+No se migró la base local existente, no se accedió a MySQL, no se crearon cuentas o catálogos
+reales ni se enviaron correos. El instalador no contiene credenciales predeterminadas; los
+secretos sintéticos de sus pruebas están solo en tests. Sin commit, push, PR ni despliegue.
+El árbol conserva tanto los cambios de esta continuación como los cambios previos autorizados
+de documentación y policies, pendientes de petición de commit.
+
+**Pendientes y bloqueos:**
+
+- B3 sigue pendiente; las cinco migraciones nuevas deben aplicarse únicamente cuando se autorice
+  su activación local y se verifique la conexión. No presentar estas pantallas como activadas en
+  la base local actual. F1 no está cerrada.
+- F2: verificación de correo diferida por la política vigente, importación institucional por lotes
+  y aprovisionamiento real autorizado. El código de inicialización sí está implementado.
+- F3/F4: asignaciones individuales/grupales, bajas/archivo, pruebas de infraestructura y
+  concurrencia MySQL. Sin cierre integral de F3/F4.
+- F5: PI-003 y PI-004 pendientes. F7: PI-006 pendiente. PI-005, PI-007, PI-009, PI-010 y PI-011
+  mantienen su estado; no hay nuevos formatos, cuotas ni tratamiento de datos reales aprobado.
+- F6: QA visual/accesibilidad integral pendiente. F8/F9: respaldo/restore y empaquetado/despliegue
+  todavía no implementados en este incremento. F10 permanece fuera de alcance.
+
+**Siguiente objetivo concreto:** obtener la definición institucional de PI-003 (estados,
+transiciones, actores y condiciones), registrarla y construir su máquina de estados con pruebas
+negativas antes de habilitar envío, corrección, cierre o revisión.
+
+---
+
+## 15. Sesión 2026-11-18 (continuación) — Publicación de commits autorizada
+
+**Autorización:** el usuario pidió expresamente «sube commit por commit y sigue con las demás
+fases». Se autoriza commit y push a `origin/main`; no despliegue, migración local/MySQL ni
+aprobación de políticas institucionales pendientes.
+
+**Commits publicados, uno por uno:**
+
+- `94dce25` — `feat: incorporar jurisdicción y dominio documental autorizado`.
+- `d706734` — `feat: habilitar proyectos y evidencias privadas por versión`.
+
+**Verificación por commit:** se exportó el contenido exacto del índice Git a una copia aislada,
+con dependencias locales y clave exclusivamente sintética de pruebas. Primer commit: **67
+pruebas / 275 aserciones**. Segundo: **91 pruebas / 533 aserciones**. Ambos con Pint, lint PHP,
+build y enlaces documentales correctos para su snapshot. No se copió `.env` ni se usaron bases
+existentes. La primera prueba aislada detectó que faltaba `bootstrap/cache`; se añadió su
+`.gitignore` al primer commit y se verificó de nuevo el arranque y la suite con éxito.
+
+**Incidencias del entorno:** SSH global falló por permisos del archivo de configuración de
+systemd. Se utilizó `GIT_SSH_COMMAND='ssh -F ~/.ssh/config'` (ruta expandida en la ejecución),
+sin modificar el sistema. Git no tenía identidad configurada: se reutilizó por comando la
+identidad de los últimos commits, sin cambiar configuración global. Los dos pushes finalizaron
+correctamente. La referencia remota estaba alineada antes de comenzar.
+
+**Siguiente incremento seguro:** F8, verificación de integridad física de evidencias privadas
+con pruebas de corrupción y rechazo de descarga; después, preparar verificaciones de entrega
+F9. F5/F7 permanecen bloqueadas por PI-003/PI-004/PI-006 y B3 sigue pendiente.

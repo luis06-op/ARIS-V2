@@ -1,9 +1,8 @@
 # Instalación local
 
-> Procedimiento para un entorno de desarrollo nuevo. **Nada de esto se ha ejecutado todavía**
-> en este repositorio: F1 está bloqueada por la ausencia de Composer y de un servidor MySQL
-> activo (ver `docs/ESTADO-ARIS-2.0.md`). Este documento es el objetivo verificable, no un
-> informe de éxito.
+> Procedimiento para un entorno de desarrollo nuevo y autorizado. PHP, Composer, npm y la
+> suite SQLite están verificados; B3 sigue pendiente y no se opera sobre MySQL sin autorización.
+> El estado real y los comandos ejecutados se registran en `docs/ESTADO-ARIS-2.0.md`.
 
 ## 1. Requisitos
 
@@ -77,9 +76,46 @@ npm run build        # o npm run dev durante el desarrollo
 php8.4 artisan serve --host=127.0.0.1 --port=8099
 ```
 
-Estado real: los pasos 1, 3 (sin `npm install`) y 4 se ejecutaron al instalar el esqueleto;
-el paso 2 está **pendiente** porque no hay servidor MySQL activo. La base local actual es
-SQLite (`database/database.sqlite`, ignorada por Git) y **no** valida el esquema de ARIS.
+Estado real: dependencias y build están verificados. La aplicación local usa SQLite
+(`database/database.sqlite`, ignorada por Git); PHPUnit usa `:memory:`. Las cinco migraciones
+añadidas el 18-11-2026 se verificaron solo en memoria y **no se aplicaron a la base local**.
+La validación y cualquier operación MySQL siguen pendientes por B3.
+
+### 3.1 Autoridad inicial (PI-002)
+
+En una instalación autorizada, con el esquema ya migrado y la conexión verificada por la
+persona responsable, ejecutar desde la raíz del proyecto:
+
+```bash
+php8.4 setup_admin.php
+# Equivalente:
+php8.4 artisan aris:inicializar-administracion
+```
+
+El instalador pide nombre y código oficiales de la institución, nombre y correo de la autoridad
+designada y contraseña con confirmación (entrada oculta). No ofrece datos de demostración ni
+credenciales predeterminadas. No migra ni cambia la conexión. Se rechaza la reutilización si ya
+se configuró la administración, aunque después se haya retirado su rol. El archivo solo funciona
+por CLI y está fuera de `public/`.
+
+La contraseña la entrega el operador al responsable institucional por el canal acordado; no
+se imprime ni se envía correo. En esta sesión el comando se probó únicamente en SQLite de
+pruebas; **no se ejecutó sobre la base local ni se creó un administrador real**.
+
+### 3.2 Recorrido privado disponible
+
+1. El administrador entra en «Control de accesos»: registra especialidades y fichas oficiales,
+   vincula cuentas previamente registradas y asigna roles y jurisdicciones.
+2. Habilita explícitamente al instructor para crear proyectos en una especialidad, cuando lo
+   solicita Coordinación. Crear no designa tutor automáticamente: lo hace el administrador.
+3. El instructor tutor vincula aprendices de la institución, crea una guía y publica/asigna
+   una versión concreta al proyecto.
+4. El aprendiz prepara un borrador contra esa asignación, carga evidencias y consulta versiones
+   exactas. Una versión nueva conserva la anterior y empieza sin archivos.
+5. La excepción PI-001 requiere actor autorizado, aprendiz vigente y justificación; queda auditada.
+
+Las transiciones de envío/revisión/calificación y la publicación pública continúan pendientes
+de PI-003, PI-004 y PI-006. Estos pasos no autorizan un piloto con datos de estudiantes.
 
 ## 4. Permisos de almacenamiento
 
