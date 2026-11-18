@@ -750,3 +750,30 @@ El paquete refleja las fases completadas en esta sesión, incluye la guía Hosti
 dependencias, secretos, datos y assets compilados. No se subió al remoto; sigue siendo un
 paquete de fuentes que requiere `composer install`, `npm ci` y `npm run build`. No autoriza
 despliegue ni sustituye la validación del proveedor.
+
+---
+
+## 12. Sesión 2026-11-18 — Despliegue local y cuentas sintéticas de prueba
+
+**Alcance:** despliegue local autorizado por el responsable, **no producción**. El servidor corre
+con `php8.4 artisan serve --host=0.0.0.0 --port=8099` sobre la base SQLite de desarrollo; la
+dirección LAN observada fue `http://172.30.7.60:8099` y la local `http://127.0.0.1:8099`.
+B3 sigue pendiente: no se inició MySQL ni se cambió la conexión de aplicación.
+
+**Cuentas:** el responsable autorizó crear cuentas **sintéticas locales** con roles para probar el
+acceso. Se crearon una institución sintética, los cuatro roles del catálogo del diccionario de
+datos y una membresía activa por cuenta. Las credenciales se entregaron solo en la conversación y
+**no se versionan**. Estas cuentas son datos de prueba de la base local: **no aprueban PI-002**, no
+deben copiarse a otro entorno y no implican que la institución haya definido quién asigna roles.
+También continúa disponible la cuenta de revisión sin rol creada el 17-11-2026.
+
+**Comprobación real:** las cinco cuentas (cuatro con rol y la de revisión sin rol) respondieron
+`302 → /cuenta` al iniciar sesión con CSRF; en «Mi cuenta» se verificó la etiqueta del rol
+correspondiente en cada una y «Sin rol institucional» en la cuenta de revisión.
+
+**Estado del repositorio:** sin cambios de código en esta sesión; `main` sigue sincronizado con
+`origin/main`. No se expusieron rutas de carga o descarga de evidencias: siguen sin autorización
+HTTP porque `PI-002` continúa pendiente.
+
+**Siguiente objetivo:** resolver `PI-002` antes de convertir estos roles de prueba en autoridad
+institucional y exponer `Policies`/`Gates` con rutas reales.
