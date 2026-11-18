@@ -42,7 +42,7 @@
                 </form>
             @endcan
             @can('reopen', $version)
-                <form method="POST" action="{{ route('entregas.reabrir', $version) }}" class="mt-4 space-y-4">
+                <form method="POST" action="{{ route('entregas.reabrir', $version) }}" class="mt-4 space-y-4" data-reopen-panel>
                     @csrf
                     <label class="aris-etiqueta" for="motivo">Motivo obligatorio de reapertura</label>
                     <textarea class="aris-campo" id="motivo" name="motivo" rows="3" maxlength="5000" required>{{ old('motivo') }}</textarea>
@@ -77,8 +77,12 @@
             @can('upload', $version)
                 <form method="POST" action="{{ route('evidencias.store', $version) }}" enctype="multipart/form-data" class="mt-5 space-y-4">
                     @csrf
+                    <div data-dropzone class="aris-dropzone">
                     <label class="aris-etiqueta" for="archivo">Adjuntar evidencia</label>
                     <input class="aris-campo" id="archivo" type="file" name="archivo" accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png" required aria-describedby="limites-archivo">
+                    <p class="mt-3 text-sm text-tenue">Arrastra un archivo aquí o utiliza el selector de archivos.</p>
+                    <p class="mt-2 text-sm" data-file-status role="status">Ningún archivo seleccionado.</p>
+                    </div>
                     <p id="limites-archivo" class="text-xs text-tenue">PDF, DOCX, XLSX, JPG o PNG. Máximo {{ (int) (config('aris.files.max_bytes') / 1024 / 1024) }} MB por archivo y {{ config('aris.files.max_per_version') }} archivos por versión.</p>
                     <button class="aris-btn aris-btn-verde" type="submit">Guardar evidencia privada</button>
                 </form>

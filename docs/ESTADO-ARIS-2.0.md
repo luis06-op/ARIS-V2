@@ -661,3 +661,26 @@ No se habilitan nota numérica, reasignación de revisiones en curso ni reglas d
 
 Siguiente objetivo concreto: QA visual y accesibilidad del recorrido académico, seguido del
 ensayo aislado de instalación y respaldo/restore. F7 sigue pendiente de PI-006.
+## 19. Sesión 2026-11-18 — QA Blade y ejecución por fases
+
+El usuario confirmó conservar Laravel 13 + Blade + Tailwind 4 + JavaScript vanilla.
+El prompt inicial citaba Laravel 11/React e identificadores SQL distintos; se aclaró antes
+de modificar el esquema. Autoriza validación MySQL 8.x sobre entorno aislado y commits por fase.
+
+F6: añadidos arrastrar/soltar progresivo y diálogo nativo de reapertura con formulario sin JS,
+salto al contenido, foco reforzado y ajuste responsive de cabecera. Corregido contraste del
+pie lateral (axe detectó 4,2:1 frente a 4,5:1 requerido) y texto del botón cian.
+
+QA ejecutado con Chromium y axe: cuatro roles a 390/768/1440 px, envío congelado y modal,
+14 capturas/análisis sin infracciones detectadas ni desbordamientos; teclado, carga real
+por HTTP y reapertura comprobados. Artefactos locales en `aris-browser-os57YL`, dentro del
+directorio temporal aprobado. Se inspeccionaron visualmente las capturas móvil y modal.
+La primera ejecución requirió instalar el Chromium correspondiente a Playwright.
+Procedimiento reproducible en `docs/operations/QA-NAVEGADOR.md`.
+
+MySQL: el cliente preexistente es MariaDB 10.4 de XAMPP y no se usará para certificar B3.
+Se descargó MySQL Community 8.4.13 en el directorio temporal, con checksum coincidente con
+el publicado por el proveedor; resta iniciar el servidor aislado y ejecutar verificaciones.
+
+Siguiente objetivo: validar migraciones y suite en MySQL, después respaldo/restore y módulos
+complementarios. No se han tocado bases existentes ni servicios globales.

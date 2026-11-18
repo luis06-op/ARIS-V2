@@ -10,6 +10,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-dvh bg-noche text-texto antialiased">
+    <a href="#contenido-principal" class="aris-saltar">Saltar al contenido principal</a>
     <div class="relative isolate min-h-dvh">
         @include('componentes.orbs', ['atenuado' => true])
         <div class="relative z-10 flex min-h-dvh flex-col md:flex-row">
@@ -53,12 +54,12 @@
                     </nav>
                 </div>
 
-                <p class="hidden px-4 pb-4 text-xs text-tenue/70 md:block">© {{ date('Y') }} ARIS</p>
+                <p class="hidden px-4 pb-4 text-xs text-tenue md:block">© {{ date('Y') }} ARIS</p>
             </aside>
 
             <div class="flex min-w-0 flex-1 flex-col">
                 <header class="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
-                    <div class="flex items-center gap-3">
+                    <div class="flex min-w-0 flex-wrap items-center gap-3">
                         <h1 class="text-lg font-bold tracking-tight">@yield('titulo-panel', 'Mi cuenta')</h1>
                         <span class="aris-chip">@yield('rol', 'Sin rol institucional')</span>
                     </div>
@@ -71,7 +72,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 p-5 sm:p-7">
+                <main id="contenido-principal" tabindex="-1" class="flex-1 p-5 sm:p-7">
                     @if (session('status') && !request()->routeIs('cuenta'))
                         <p class="aris-aviso mb-5 max-w-4xl" role="status">{{ session('status') }}</p>
                     @endif

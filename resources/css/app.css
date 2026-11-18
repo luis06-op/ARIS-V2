@@ -117,7 +117,7 @@
 
     .aris-btn-cian {
         background-color: var(--color-cian);
-        color: #fff;
+        color: #041424;
         box-shadow: 0 0 22px rgb(53 150 255 / 0.32);
     }
 
@@ -220,7 +220,8 @@
     }
 
     .aris-campo:focus {
-        outline: none;
+        outline: 2px solid var(--color-cian-claro);
+        outline-offset: 2px;
         border-color: var(--color-verde);
         box-shadow: 0 0 0 3px rgb(47 220 112 / 0.16);
     }
@@ -348,6 +349,21 @@
         box-shadow: inset 3px 0 0 var(--color-verde);
     }
 }
+
+.aris-saltar {
+    position: fixed;
+    top: -8rem;
+    left: 1rem;
+    z-index: 100;
+    background: #09111e;
+    color: #f4f8ff;
+    padding: 1rem;
+}
+.aris-saltar:focus { top: 1rem; }
+.aris-dropzone { border: 2px dashed #7b98b8; border-radius: 0.75rem; padding: 1rem; }
+.aris-dropzone[data-dragging='true'] { border-color: var(--color-verde); background: #0f3d26; }
+.aris-dialog { margin: auto; width: min(34rem, calc(100% - 2rem)); max-height: 85dvh; overflow: auto; padding: 1.5rem; border: 1px solid #7b98b8; border-radius: 1rem; color: #f4f8ff; background: #0a1624; }
+.aris-dialog::backdrop { background: rgb(0 0 0 / 0.75); }
 
 /* ==========================================================================
    Accesibilidad — preferencias locales del visitante
