@@ -18,14 +18,14 @@ final class UpdateGuideVersion
     {
         $cambios = array_intersect_key($cambios, array_flip(['title', 'content']));
 
-        if ($version->status !== 'publicada') {
-            $version->update($cambios);
-
-            return $version->fresh();
-        }
-
         return DB::transaction(function () use ($version, $cambios, $autor): ActivityVersion {
             $actividad = Activity::whereKey($version->activity_id)->lockForUpdate()->firstOrFail();
+            $version = ActivityVersion::whereKey($version->id)->lockForUpdate()->firstOrFail();
+            if ($version->status !== 'publicada') {
+                $version->update($cambios + ['checksum' => hash('sha256', (string) ($cambios['content'] ?? $version->content))]);
+
+                return $version->fresh();
+            }
             $numero = (int) $actividad->versions()->max('version_number') + 1;
             $contenido = $cambios['content'] ?? $version->content;
 

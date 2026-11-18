@@ -18,8 +18,8 @@ use Throwable;
 
 /**
  * Guarda evidencias fuera del DocumentRoot y sirve solo versiones autorizadas (ADR-003).
- * La autorización HTTP se conectará cuando PI-002 defina quién puede adjuntar y descargar:
- * hoy este servicio es interno y no expone rutas.
+ * EvidenceController autoriza la descarga sobre DocumentVersion; AttachEvidence autoriza
+ * y bloquea la versión de entrega antes de invocar este servicio interno.
  */
 final class EvidenceStorage
 {

@@ -11,15 +11,16 @@ use App\Models\ActivityAssignment;
 use App\Models\ActivityVersion;
 use App\Models\AuditEvent;
 use App\Models\Institution;
+use App\Models\InstitutionMembership;
 use App\Models\Project;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * PI-001 aprobada: entrega vinculada a versión concreta de guía, con excepción auditada.
- * La autoridad para aprobar la excepción depende de PI-002: en las pruebas se pasa un usuario
- * explícito como `autorizador`, sin crear una política de roles inventada.
+ * La autoridad para aprobar la excepción aplica PI-002 aprobada y se verifica mediante Gate.
  */
 class SubmissionRulesTest extends TestCase
 {
@@ -119,9 +120,12 @@ class SubmissionRulesTest extends TestCase
             $this->assertSame(0, AuditEvent::count());
         }
 
+        $membership = InstitutionMembership::create(['institution_id' => $proyecto->institution_id, 'user_id' => $autorizador->id, 'joined_at' => today()]);
+        $membership->roles()->attach(Role::create(['code' => 'administrador', 'name' => 'Administrador']));
+
         $entrega = $this->accion()->execute($datos + [
             'motivo_excepcion' => 'Convocatoria especial aprobada por coordinación',
-        ], $autorizador);
+        ], $autorizador, '127.0.0.1');
 
         $this->assertNull($entrega->activity_assignment_id);
 
@@ -130,6 +134,10 @@ class SubmissionRulesTest extends TestCase
         $this->assertSame('submission.unlinked_exception', $evento->action);
         $this->assertSame($autorizador->id, $evento->actor_id);
         $this->assertSame('Convocatoria especial aprobada por coordinación', $evento->metadata['motivo']);
+        $this->assertSame('127.0.0.1', $evento->metadata['ip']);
+        $this->assertSame($proyecto->id, $evento->metadata['proyecto']);
+        $this->assertNotNull($evento->request_id);
+        $this->assertNotNull($evento->occurred_at);
         $this->assertSame([], array_intersect_key($evento->metadata, array_flip(['password', 'token'])));
     }
 

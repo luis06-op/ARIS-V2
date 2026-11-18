@@ -13,6 +13,11 @@ class ActivityAssignment extends Model
         'assigned_by', 'assigned_at', 'due_at', 'status',
     ];
 
+    protected function casts(): array
+    {
+        return ['assigned_at' => 'datetime', 'due_at' => 'datetime'];
+    }
+
     public function activityVersion(): BelongsTo
     {
         return $this->belongsTo(ActivityVersion::class);

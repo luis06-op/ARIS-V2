@@ -10,10 +10,11 @@ use App\Models\Project;
 use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 /**
- * Crea una entrega respetando PI-001. La excepción sin asignación solo es posible si la capa HTTP
- * entrega un actor autorizado por una Policy; esa autoridad depende de PI-002 y hoy no se expone.
+ * Crea una entrega respetando PI-001; la excepción exige autoridad verificada en servidor.
  */
 final class CreateSubmission
 {
@@ -22,7 +23,7 @@ final class CreateSubmission
     /**
      * @param  array<string, mixed>  $datos
      */
-    public function execute(array $datos, ?User $autorizador = null): Submission
+    public function execute(array $datos, ?User $autorizador = null, ?string $ip = null): Submission
     {
         $proyecto = Project::findOrFail($datos['project_id']);
         $autor = User::findOrFail($datos['author_id']);
@@ -36,14 +37,15 @@ final class CreateSubmission
         } else {
             $motivo = trim((string) ($datos['motivo_excepcion'] ?? ''));
 
-            if (! $autorizador || $motivo === '') {
+            if (! $autorizador || mb_strlen($motivo) < 20 || mb_strlen($motivo) > 2000 || ! filter_var($ip, FILTER_VALIDATE_IP)) {
                 throw new DomainRuleViolation(
-                    'Toda entrega debe declarar una asignación vigente, salvo excepción autorizada y auditada (PI-001).'
+                    'La excepción PI-001 exige autorizador, IP válida y justificación de 20 a 2000 caracteres.'
                 );
             }
+            Gate::forUser($autorizador)->authorize('authorizeUnlinkedException', $proyecto);
         }
 
-        return DB::transaction(function () use ($datos, $proyecto, $autor, $asignacion, $autorizador): Submission {
+        return DB::transaction(function () use ($datos, $proyecto, $autor, $asignacion, $autorizador, $ip): Submission {
             $entrega = Submission::create([
                 'project_id' => $proyecto->id,
                 'activity_assignment_id' => $asignacion?->id,
@@ -60,9 +62,13 @@ final class CreateSubmission
                     'resource_type' => 'submission',
                     'resource_id' => (string) $entrega->id,
                     'result' => 'exito',
+                    'request_id' => (string) Str::uuid(),
+                    'occurred_at' => now(),
                     'metadata' => [
-                        'motivo' => mb_substr(trim((string) $datos['motivo_excepcion']), 0, 255),
+                        'motivo' => trim((string) $datos['motivo_excepcion']),
                         'autor' => $autor->id,
+                        'proyecto' => $proyecto->id,
+                        'ip' => $ip,
                     ],
                 ]);
             }

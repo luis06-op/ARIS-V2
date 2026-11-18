@@ -15,6 +15,35 @@
 
 ## 1. Identidad e institución
 
+### Ampliación PI-002 (18-11-2026)
+
+Cinco migraciones `2026_11_18_000001` … `000005`, sin datos semilla. Todas las tablas nuevas
+tienen PK `id` bigint unsigned y timestamps. Las claves foráneas usan `RESTRICT`.
+
+| Tabla / columna | Tipo y nulabilidad | Restricción / significado |
+|---|---|---|
+| `especialidades.institution_id` | bigint unsigned, no nulo | FK institutions |
+| `especialidades.codigo` / `nombre` | varchar(80) / varchar(255), no nulos | UNIQUE (institution_id, codigo) |
+| `fichas.especialidad_id` | bigint unsigned, no nulo | FK especialidades |
+| `fichas.numero` / `cohorte` | varchar(80) / varchar(120), no nulos | UNIQUE (especialidad_id, numero); cohorte declarada por administrador |
+| `vinculos_especialidad.institution_membership_id` | bigint unsigned, no nulo | FK institution_memberships |
+| `vinculos_especialidad.especialidad_id` | bigint unsigned, no nulo | FK especialidades; UNIQUE con institution_membership_id |
+| `vinculos_especialidad.can_create_projects` | boolean, no nulo, default false | No concede facultades por defecto |
+| `vinculos_especialidad.assigned_by` | bigint unsigned, no nulo | FK users; administrador que configuró el vínculo |
+| `vinculos_especialidad.revoked_at` | timestamp, nullable | Vínculo revocado cuando no es nulo |
+| `jurisdicciones_evaluador.institution_membership_id` | bigint unsigned, no nulo | FK institution_memberships |
+| `jurisdicciones_evaluador.ficha_id` | bigint unsigned, no nulo | FK fichas; UNIQUE con institution_membership_id |
+| `jurisdicciones_evaluador.assigned_by` | bigint unsigned, no nulo | FK users; administrador que configuró la jurisdicción |
+| `jurisdicciones_evaluador.revoked_at` | timestamp, nullable | Revocación sin borrar la fila |
+| `projects.ficha_id` | bigint unsigned, nullable | FK fichas; nullable para registros previos, obligatorio en creación HTTP |
+
+La coherencia institucional entre membresía, especialidad, ficha y proyecto se verifica en las
+acciones y consultas de autorización (ADR-011). Los catálogos son sensibilidad B; las
+asignaciones personales y sus autores son M. No se define una retención nueva (PI-007 pendiente).
+La auditoría PI-001 conserva IP en `metadata.ip`, beneficiario en `metadata.autor`, proyecto en
+`metadata.proyecto` y justificación completa en `metadata.motivo`; `request_id` contiene el UUID
+de transacción. Es dato personal restringido; no se exporta mediante las nuevas rutas.
+
 ### `institutions`
 
 | Columna | Tipo | Nulo | Restricción | Sens. | Retención |

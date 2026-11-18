@@ -4,7 +4,8 @@
 > diagrama se actualiza con ellas. Nombres en minúscula en la base; aquí en mayúscula por
 > convención de Mermaid.
 >
-> Alcance: 21 entidades propias. Las tablas del framework (`password_reset_tokens`,
+> Alcance: núcleo documental más especialidades, fichas, vínculos de instructor y jurisdicciones
+> de evaluador (ADR-011). Las tablas del framework (`password_reset_tokens`,
 > `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`) **no** se
 > duplican ni se documentan aquí.
 
@@ -16,6 +17,13 @@ erDiagram
     INSTITUTIONS ||--o{ PROJECTS : "agrupa"
     INSTITUTIONS ||--o{ DOCUMENTS : "contextualiza"
     INSTITUTIONS ||--o{ AUDIT_EVENTS : "registra"
+    INSTITUTIONS ||--o{ ESPECIALIDADES : "ofrece"
+    ESPECIALIDADES ||--o{ FICHAS : "agrupa"
+    FICHAS |o--o{ PROJECTS : "contextualiza"
+    INSTITUTION_MEMBERSHIPS ||--o{ VINCULOS_ESPECIALIDAD : "habilita"
+    ESPECIALIDADES ||--o{ VINCULOS_ESPECIALIDAD : "delimita"
+    INSTITUTION_MEMBERSHIPS ||--o{ JURISDICCIONES_EVALUADOR : "recibe"
+    FICHAS ||--o{ JURISDICCIONES_EVALUADOR : "delimita"
 
     USERS ||--o{ INSTITUTION_MEMBERSHIPS : "participa"
     USERS ||--o{ PROJECT_MEMBERSHIPS : "colabora"
