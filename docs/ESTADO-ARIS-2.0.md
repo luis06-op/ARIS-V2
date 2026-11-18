@@ -698,7 +698,7 @@ fallos de auditoría a un mecanismo portable. Nueva migración de inmutabilidad 
 
 Resultado: **123 pruebas / 723 aserciones en MySQL y SQLite**, todas aprobadas. Pint, lint,
 build y enlaces aprobados. Índices y claves RESTRICT verificados mediante inspección del
-esquema; triggers de auditoría y hash probados también en MySQL. Guía `PRUEBAS-MYSQL.md`.
+esquema; triggers de auditoría y hash probados también en MySQL. Guía `operations/PRUEBAS-MYSQL.md`.
 
 B3 deja de bloquear este entorno sintético; no se concede acceso a bases existentes ni
 despliegue. Quedan pruebas de carga, concurrencia ampliada, instalación/restore y requisitos
