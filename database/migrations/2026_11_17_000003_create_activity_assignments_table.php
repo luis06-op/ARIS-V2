@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('status', ['activa', 'revocada'])->default('activa');
             $table->timestamps();
 
-            $table->unique(['activity_version_id', 'target_type', 'target_ref']);
+            $table->unique(['activity_version_id', 'target_type', 'target_ref'], 'activity_assignment_target_unique');
             $table->index(['project_id', 'status']);
         });
     }

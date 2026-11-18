@@ -684,3 +684,23 @@ el publicado por el proveedor; resta iniciar el servidor aislado y ejecutar veri
 
 Siguiente objetivo: validar migraciones y suite en MySQL, después respaldo/restore y módulos
 complementarios. No se han tocado bases existentes ni servicios globales.
+## 20. Sesión 2026-11-18 — B3 autorizado para pruebas aisladas MySQL
+
+Autorización expresa del usuario: ejecutar migraciones y suite en MySQL 8.x. Aplicada
+exclusivamente a una instalación MySQL Community **8.4.13** descargada en el temporal aprobado,
+datadir/socket en `aris-mysql-gEs6po`, TCP desactivado y base nueva `aris_test_certificacion`.
+Identidad, datadir y socket comprobados antes de crear la base. No se usó MariaDB/XAMPP.
+
+La primera ejecución falló por nombres de índices superiores a 64 caracteres. Se asignaron
+nombres cortos en las dos migraciones iniciales afectadas (asignaciones y rondas), conservando
+columnas/unicidad. Se adaptaron pruebas DDL a commits implícitos de MySQL y la inyección de
+fallos de auditoría a un mecanismo portable. Nueva migración de inmutabilidad SHA-256/tamaño.
+
+Resultado: **123 pruebas / 723 aserciones en MySQL y SQLite**, todas aprobadas. Pint, lint,
+build y enlaces aprobados. Índices y claves RESTRICT verificados mediante inspección del
+esquema; triggers de auditoría y hash probados también en MySQL. Guía `PRUEBAS-MYSQL.md`.
+
+B3 deja de bloquear este entorno sintético; no se concede acceso a bases existentes ni
+despliegue. Quedan pruebas de carga, concurrencia ampliada, instalación/restore y requisitos
+del hosting antes de declarar una candidata certificada. F1 no se cierra por esta suite sola.
+Siguiente objetivo: respaldo MySQL+storage, restauración aislada y guía Hostinger.

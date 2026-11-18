@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['submission_version_id', 'evaluator_id', 'round_number']);
+            $table->unique(['submission_version_id', 'evaluator_id', 'round_number'], 'review_round_version_evaluator_unique');
             $table->index(['submission_version_id', 'status']);
         });
     }

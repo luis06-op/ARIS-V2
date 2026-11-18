@@ -187,15 +187,21 @@ class AcademicWorkflowTest extends TestCase
     public function test_audit_failure_rolls_back_reopening(): void
     {
         $this->complete();
-        DB::unprepared("CREATE TRIGGER reject_reopening_audit BEFORE INSERT ON audit_events WHEN NEW.action = 'REAPERTURA_ENTREGA' BEGIN SELECT RAISE(ABORT, 'Fallo sintético de auditoría'); END");
+        $reject = true;
+        DB::listen(function ($query) use (&$reject): void {
+            if ($reject && in_array('REAPERTURA_ENTREGA', $query->bindings, true)) {
+                throw new \RuntimeException('Fallo sintético de auditoría.');
+            }
+        });
         try {
             app(ReopenSubmission::class)->execute($this->instructor, $this->version, 'Aclaración', '192.0.2.1');
             $this->fail('La reapertura debe fallar si no se registra auditoría.');
-        } catch (QueryException) {
+        } catch (\RuntimeException) {
+            $reject = false;
             $this->assertSame('revisada', Submission::findOrFail($this->version->submission_id)->status);
             $this->assertDatabaseMissing('audit_events', ['action' => 'REAPERTURA_ENTREGA']);
         } finally {
-            DB::unprepared('DROP TRIGGER reject_reopening_audit');
+            $reject = false;
         }
     }
 
