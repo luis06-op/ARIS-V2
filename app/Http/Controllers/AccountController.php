@@ -14,6 +14,10 @@ class AccountController extends Controller
         $membership = $user->institutionMemberships()
             ->with(['institution', 'roles'])
             ->where('status', 'activa')
+            ->whereDate('joined_at', '<=', today())
+            ->where(fn ($query) => $query->whereNull('left_at')->orWhereDate('left_at', '>', today()))
+            ->whereHas('institution', fn ($query) => $query->where('status', 'activa'))
+            ->whereHas('user', fn ($query) => $query->where('status', 'activo'))
             ->first();
 
         $roles = $membership ? $membership->roles : collect();

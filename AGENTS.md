@@ -41,8 +41,8 @@ con la tarea segura siguiente.
   complejos. Una responsabilidad por archivo.
 - `database/migrations` → **única fuente editable del esquema**. Nada de `schema.sql`
   paralelo; los snapshots se generan y se etiquetan como derivados.
-- `resources/js` → React + TypeScript + Inertia; componentes tipados, sin lógica de
-  autorización en el cliente (el cliente solo oculta; el servidor decide).
+- `resources/views` → Blade; `resources/js` → JavaScript vanilla; Vite + Tailwind 4.
+  Sin lógica de autorización en el cliente (el cliente solo oculta; el servidor decide).
 - `storage/app/private` → evidencias, cuarentena y exportaciones. **Nunca** en `public/`.
 - `tests/` → evidencia reproducible. Una función no está lista sin prueba positiva y
   negativa.
@@ -78,8 +78,9 @@ find app database routes config tests -name '*.php' -print0 2>/dev/null \
 # 2. Pruebas
 $PHP artisan test
 
-# 3. Tipos y estilo del frontend (cuando exista)
-npm run typecheck && npm run lint
+# 3. Estilo PHP y compilación del frontend real
+$PHP vendor/bin/pint --test
+npm run build
 
 # 4. Documentación y nada sensible versionado
 node scripts/verificar-enlaces-docs.mjs

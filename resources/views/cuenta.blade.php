@@ -17,8 +17,8 @@
         </h2>
         <p class="mt-3 max-w-2xl text-sm leading-relaxed text-tenue">
             Tu cuenta está activa. Aquí verás únicamente información real de tu perfil y de tu
-            vínculo con la institución; los paneles de proyectos, guías y entregas se habilitan
-            en las siguientes fases del proyecto.
+            vínculo con la institución. En Proyectos puedes consultar las fichas a las que tienes
+            acceso por asignación o jurisdicción vigente.
         </p>
     </section>
 
@@ -78,8 +78,8 @@
             @endif
 
             <p class="mt-4 rounded-lg border border-white/5 bg-white/[0.02] p-3 text-xs leading-relaxed text-tenue">
-                La asignación de roles y responsabilidades depende de una decisión institucional
-                pendiente; esta pantalla no simula permisos que aún no existen.
+                Solo el administrador asigna roles y tutores. Los permisos se verifican en cada
+                operación según tu membresía y las asignaciones vigentes.
             </p>
         </section>
     </div>

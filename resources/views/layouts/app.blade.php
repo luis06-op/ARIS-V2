@@ -27,7 +27,7 @@
                         <p class="mt-1 text-sm font-semibold">{{ auth()->user()->name }}</p>
                     </div>
 
-                    <nav class="flex w-full items-center gap-1 md:mt-2 md:w-auto md:flex-1 md:flex-col md:items-stretch" aria-label="Navegación principal">
+                    <nav class="flex w-full flex-wrap items-center gap-1 md:mt-2 md:w-auto md:flex-1 md:flex-col md:items-stretch" aria-label="Navegación principal">
                         <a href="{{ route('cuenta') }}" class="aris-nav-enlace" @if (request()->routeIs('cuenta')) aria-current="page" @endif>
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M3 10.5 12 3l9 7.5" />
@@ -35,6 +35,9 @@
                             </svg>
                             Mi cuenta
                         </a>
+
+                        <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>Proyectos</a>
+                        <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>Control de accesos</a>
 
                         <form method="POST" action="{{ route('sesion.destroy') }}" class="md:mt-auto">
                             @csrf
@@ -69,6 +72,9 @@
                 </header>
 
                 <main class="flex-1 p-5 sm:p-7">
+                    @if (session('status') && !request()->routeIs('cuenta'))
+                        <p class="aris-aviso mb-5 max-w-4xl" role="status">{{ session('status') }}</p>
+                    @endif
                     @yield('contenido')
                 </main>
             </div>
