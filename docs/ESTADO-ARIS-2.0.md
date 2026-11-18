@@ -613,5 +613,17 @@ El build conserva el aviso informativo de `fontaine` opcional.
 
 Siguen pendientes B3 y PI-003/004/005/006/007/009/010/011, QA visual, instalación
 integral, backup/restore y concurrencia MySQL. F1 no está cerrada. F5/F7 bloqueadas.
-Siguiente objetivo: generar dos paquetes del commit publicado, registrar sus hashes
-y continuar con un ensayo aislado de instalación cuando estén satisfechas sus puertas.
+**Ejecución real posterior al push:** commit `7f0c8911763ba5708a8898c97b78e93a37682c85`.
+Se generaron `aris-7f0c891-a.zip` y `aris-7f0c891-b.zip` en el directorio temporal
+aprobado del entorno, fuera del repositorio. Ambos contienen **215 archivos** más
+manifiesto. `cmp` confirmó igualdad byte a byte; `aris:verificar-paquete` terminó
+con código 0. SHA-256 de ambos:
+
+```text
+9b755c7e07af25de9bbe8c541c3fba520ad287558fd549ee036b90950a6c54cf
+```
+
+Los paquetes son artefactos locales de fuentes del commit indicado, no se subieron
+al remoto. No se ejecutaron migraciones ni operaciones sobre bases existentes.
+Siguiente objetivo concreto: ensayo aislado de instalación del paquete y diseño
+del simulacro de respaldo/restore; resolver PI-003/004 para desbloquear F5.
