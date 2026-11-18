@@ -7,7 +7,8 @@
 **Fase en curso:** F1 con esquema verificado en SQLite de pruebas (B3 pendiente) · F2 en desarrollo
 (identidad, roles, jurisdicción, policies y aprovisionamiento CLI) · F3/F4 iniciadas con recorrido
 HTTP privado en borrador · F6 con pantallas Blade del recorrido (QA visual nuevo pendiente)
-· F8 iniciada en integridad de evidencias · F9 iniciada en empaquetado de fuentes
+· F5 iniciada con PI-003/004 aprobadas y recorrido cualitativo · F8 iniciada en integridad
+de evidencias · F9 iniciada en empaquetado de fuentes
 **Repositorio:** `ARIS-V2` (producto: ARIS 2.0)
 
 ---
@@ -627,3 +628,36 @@ Los paquetes son artefactos locales de fuentes del commit indicado, no se subier
 al remoto. No se ejecutaron migraciones ni operaciones sobre bases existentes.
 Siguiente objetivo concreto: ensayo aislado de instalación del paquete y diseño
 del simulacro de respaldo/restore; resolver PI-003/004 para desbloquear F5.
+## 18. Sesión 2026-11-18 — PI-003/004 aprobadas y recorrido académico
+
+El responsable aprobó envío con congelamiento estricto, revisión cualitativa Cumple/Requiere
+Ajustes con retroalimentación obligatoria, nuevos intentos para corregir y reapertura por
+administrador o personal con asignación/jurisdicción vigente. Motivo y auditoría obligatorios.
+Fechas límite nullable en BD; activación de su lógica diferida. Los bloqueos PI-003/004
+consignados en entradas anteriores quedan resueltos por esta confirmación.
+
+Implementados cuatro casos de uso transaccionales y rutas Blade: enviar, iniciar revisión,
+registrar resultado y reabrir. La creación de versión admite corrección autorizada y conserva
+contenido/revisión anteriores. Se reutiliza el esquema existente con correspondencias
+documentadas en ADR-014. Los triggers de auditoría rechazan UPDATE/DELETE directo.
+
+Dos migraciones nuevas: fechas límite en `submissions` y protección de `audit_events`.
+No se ejecutan sobre bases locales ni MySQL; se prueban con SQLite en memoria. Se amplió
+la prueba de rollback/reaplicación para las siete migraciones del 18 de noviembre.
+
+Verificación de implementación: `php8.4 artisan test` — **121 pruebas / 707 aserciones**
+aprobadas. Nueve pruebas nuevas cubren recorrido HTTP, corrección, feedback obligatorio,
+escape HTML, jurisdicción y revocación, reapertura y motivo/IP, plazos inactivos,
+protección SQL de auditoría y reversión si falla su registro. La primera ejecución detectó
+que el test de rollback esperaba cinco migraciones; se actualizó a siete y pasó la suite.
+También aprobados: Pint, lint PHP, build Vite, enlaces documentales (41 documentos,
+65 enlaces) y `git diff --check`. Se mantiene el aviso informativo de `fontaine` opcional.
+La prueba de corrección recorre también el envío y evaluación del segundo intento y
+comprueba que no hereda ni altera la retroalimentación del primero.
+
+Pendientes: B3, PI-005/006/007/009/010/011, QA visual, prueba real de concurrencia MySQL,
+privilegios/triggers en MySQL, backup/restore e instalación integral. No se cierra F1 ni F5.
+No se habilitan nota numérica, reasignación de revisiones en curso ni reglas de plazos.
+
+Siguiente objetivo concreto: QA visual y accesibilidad del recorrido académico, seguido del
+ensayo aislado de instalación y respaldo/restore. F7 sigue pendiente de PI-006.

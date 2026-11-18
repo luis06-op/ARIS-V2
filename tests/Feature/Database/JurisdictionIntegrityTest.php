@@ -39,7 +39,8 @@ class JurisdictionIntegrityTest extends TestCase
     public function test_new_migrations_rollback_and_reapply_in_isolated_database(): void
     {
         try {
-            $this->artisan('migrate:rollback', ['--step' => 5, '--force' => true])->assertSuccessful();
+            $this->artisan('migrate:rollback', ['--step' => 7, '--force' => true])->assertSuccessful();
+            $this->assertFalse(Schema::hasColumn('submissions', 'fecha_limite_entrega'));
             $this->assertFalse(Schema::hasColumn('projects', 'ficha_id'));
             $this->assertFalse(Schema::hasTable('especialidades'));
             $this->assertFalse(Schema::hasTable('jurisdicciones_evaluador'));
@@ -47,6 +48,8 @@ class JurisdictionIntegrityTest extends TestCase
             $this->artisan('migrate', ['--force' => true])->assertSuccessful();
         }
         $this->assertTrue(Schema::hasColumn('projects', 'ficha_id'));
+        $this->assertTrue(Schema::hasColumn('submissions', 'fecha_limite_entrega'));
+        $this->assertTrue(Schema::hasColumn('submissions', 'fecha_limite_correccion'));
         $this->assertTrue(Schema::hasTable('vinculos_especialidad'));
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
     }

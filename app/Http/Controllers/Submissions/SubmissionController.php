@@ -27,7 +27,7 @@ class SubmissionController extends Controller
         Gate::authorize('view', $version);
 
         return view('entregas.ver', [
-            'version' => $version->load('submission.project', 'submission.assignment.activityVersion', 'documentLinks.documentVersion'),
+            'version' => $version->load('submission.project', 'submission.assignment.activityVersion', 'documentLinks.documentVersion', 'reviewRounds.comments'),
             'versiones' => $version->submission->versions()->orderByDesc('version_number')->get(),
         ]);
     }

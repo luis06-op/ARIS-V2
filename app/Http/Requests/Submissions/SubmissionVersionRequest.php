@@ -8,7 +8,7 @@ class SubmissionVersionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('upload', $this->route('version'));
+        return $this->user()->can('createVersion', $this->route('version'));
     }
 
     public function rules(): array

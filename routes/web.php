@@ -12,6 +12,7 @@ use App\Http\Controllers\InicioController;
 use App\Http\Controllers\Projects\LearnerController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\TutorController;
+use App\Http\Controllers\Submissions\AcademicWorkflowController;
 use App\Http\Controllers\Submissions\EvidenceController;
 use App\Http\Controllers\Submissions\SubmissionController;
 use App\Http\Controllers\Submissions\UnlinkedSubmissionController;
@@ -51,6 +52,10 @@ Route::get('/cuenta', [AccountController::class, 'show'])
     ->name('cuenta');
 
 Route::middleware('auth')->group(function (): void {
+    Route::post('/entregas/versiones/{version}/enviar', [AcademicWorkflowController::class, 'send'])->name('entregas.enviar');
+    Route::post('/entregas/versiones/{version}/revision/iniciar', [AcademicWorkflowController::class, 'start'])->name('entregas.revision.iniciar');
+    Route::post('/entregas/versiones/{version}/revision/completar', [AcademicWorkflowController::class, 'complete'])->name('entregas.revision.completar');
+    Route::post('/entregas/versiones/{version}/reabrir', [AcademicWorkflowController::class, 'reopen'])->name('entregas.reabrir');
     Route::post('/proyectos/{project}/aprendiz', LearnerController::class)->name('proyectos.aprendiz');
     Route::post('/accesos/{institution}/miembros', MemberController::class)->name('miembros.store');
     Route::post('/accesos/{institution}/catalogo', CatalogController::class)->name('catalogo.store');

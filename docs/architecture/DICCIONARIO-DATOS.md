@@ -15,6 +15,22 @@
 
 ## 1. Identidad e institución
 
+### Ampliación PI-003/004 (18-11-2026)
+
+La migración `2026_11_18_000006` añade a `submissions` los timestamps nullable
+`fecha_limite_entrega` y `fecha_limite_correccion`, ambos sin valor predeterminado explícito
+y sin reglas temporales activas. No se modifica el historial de migraciones iniciales.
+
+Los códigos de estado existentes se conservan: entrega `entregada` = enviada; versión
+`finalizada` con `finalized_at` = contenido congelado. Evaluación `aprobada` = Cumple y
+`ajustes` = Requiere Ajustes, con comentario obligatorio en `review_comments`. El código
+`rechazada` no se habilita por PI-004. Reabrir cambia solo la entrega a `ajustes_solicitados`.
+
+`2026_11_18_000007` incorpora triggers para rechazar UPDATE/DELETE de `audit_events`.
+El evento `REAPERTURA_ENTREGA` conserva actor en `actor_id`, entrega en `resource_id`,
+fecha en `occurred_at` y motivo/IP/entrega/versión en `metadata`. Son datos restringidos.
+Ambas migraciones se verifican únicamente en SQLite de pruebas; MySQL sigue pendiente.
+
 ### Ampliación PI-002 (18-11-2026)
 
 Cinco migraciones `2026_11_18_000001` … `000005`, sin datos semilla. Todas las tablas nuevas

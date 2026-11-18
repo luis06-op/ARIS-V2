@@ -70,3 +70,14 @@ Estados: `PENDIENTE` (prueba escrita, no ejecutada) · `APROBADA` · `FALLIDA`.
   demuestra nada.
 - Si un invariante depende de una política pendiente (`PI-###`), la estructura existe pero la
   acción permanece **deshabilitada** hasta la aprobación; se documenta en el propio test.
+# Ampliación de invariantes PI-003/004 — 18-11-2026
+
+- Enviar congela el contenido de la versión exacta y registra `finalized_at`.
+- Ninguna ruta permite cargar archivos en versiones enviadas o históricas.
+- Solo el último intento puede enviarse, revisarse o habilitar el siguiente intento.
+- Un resultado exige Cumple/Requiere Ajustes y retroalimentación no vacía. No hay nota numérica.
+- Corrección y reapertura conservan los registros anteriores y crean un nuevo intento vacío.
+- La reapertura requiere personal autorizado, motivo y auditoría en la misma transacción.
+- UPDATE/DELETE de auditoría son rechazados por triggers. Los privilegios SQL administrativos
+  y la validación MySQL quedan fuera de esta garantía, pendientes de la puerta operativa B3.
+- Los plazos nullable todavía no restringen el recorrido, incluso si están vencidos.

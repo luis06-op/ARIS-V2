@@ -185,8 +185,32 @@ ve cada rol. Cambiarla después afecta datos históricos.
 3. Sin estados: solo versiones (pierde significado pedagógico).
 
 **Recomendación:** opción 1, con plazos opcionales que la institución configura.
-**Impacto si no se decide:** solo se implementan transiciones reversibles dentro del borrador.
-**Estado:** PENDIENTE.
+**Estado:** **APROBADA — versión 1, 2026-11-18, responsable del proyecto**, mediante
+confirmación expresa en la sesión. Prevalece sobre las alternativas anteriores.
+
+- Enviar una versión en borrador congela estrictamente su contenido. La revisión se refiere
+  a esa versión exacta. No se editan sus archivos para corregirla: se crea otro intento.
+- Flujo aprobado: borrador → enviado → en revisión → Cumple o Requiere Ajustes.
+  Requiere Ajustes habilita al aprendiz para crear un nuevo borrador, conservando versiones
+  y retroalimentaciones anteriores. Cumple deja la entrega revisada.
+- Pueden reabrir una entrega revisada el administrador y el instructor responsable o evaluador
+  asignado dentro de su alcance. El administrador no requiere ficha asignada dentro de su
+  institución; se conserva el aislamiento institucional de PI-002. Instructor y evaluador
+  conservan las restricciones de pertenencia y jurisdicción vigentes.
+- Reabrir exige motivo escrito obligatorio y evento `REAPERTURA_ENTREGA` con actor, entrega,
+  motivo, timestamp e IP del servidor. La versión revisada permanece congelada; se habilita
+  un nuevo intento, no la sobrescritura del anterior.
+- Se incorporan `fecha_limite_entrega` y `fecha_limite_correccion`, timestamps nullable,
+  mediante migración incremental sobre `submissions`. No se reescriben migraciones históricas.
+  La lógica temporal queda diferida: aun con fechas vencidas no se bloquea este recorrido.
+  «Fase 1/2» de la confirmación describe etapas de activación de plazos, no renumera F1/F2 del plan.
+
+Implementación del 18-11-2026: rutas y acciones transaccionales con bloqueo del padre, policies
+revalidadas y formularios Blade. Se conservan los códigos internos existentes: `entregada`
+representa enviado; la versión usa `finalizada` y `finalized_at` para expresar el congelamiento.
+La reapertura usa la tabla vigente `audit_events`, equivalente funcional a `audit_logs`:
+`actor_id`, `resource_id`, `action`, `occurred_at` y `metadata` (entrega, motivo e IP).
+Protección SQL contra UPDATE/DELETE probada en SQLite; MySQL pendiente de B3.
 
 ---
 
@@ -204,8 +228,17 @@ apelaciones y límites de edición?
 
 **Recomendación:** empezar por la opción 1; la estructura `rubrics/rubric_criteria/scores`
 queda documentada pero **no se crea** hasta que exista decisión.
-**Impacto si no se decide:** no hay campo de calificación en la interfaz.
-**Estado:** PENDIENTE.
+**Estado:** **APROBADA — versión 1, 2026-11-18, responsable del proyecto**, mediante
+confirmación expresa en la sesión. Se adopta evaluación formativa cualitativa con dos
+resultados: **Cumple** y **Requiere Ajustes**, ambos con retroalimentación escrita obligatoria.
+No se aprueban escala numérica, pesos ni rúbricas numéricas.
+
+La revisión se registra en `review_rounds` sobre la versión exacta y la retroalimentación en
+`review_comments`. Códigos internos conservados: `aprobada` = Cumple, `ajustes` = Requiere
+Ajustes. El valor histórico `rechazada` no se ofrece ni admite en este recorrido.
+El revisor autorizado inicia una ronda y es quien registra su resultado; una ronda finalizada
+no dispone de edición ni sustitución HTTP. La reapertura no modifica la evaluación anterior.
+La reasignación de rondas en curso y apelaciones requieren un acuerdo posterior explícito.
 
 ---
 

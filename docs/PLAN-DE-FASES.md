@@ -18,7 +18,7 @@ Una función solo se declara terminada cuando pasan persistencia, permisos, erro
 | F2 | Identidad, permisos y aislamiento | Ningún acceso por adivinar IDs o alterar parámetros | **EN DESARROLLO** (roles, jurisdicción, policies, aprovisionamiento CLI y pruebas HTTP; falta verificación de correo e importación por lotes) |
 | F3 | Proyectos, guías y asignaciones | Asignación verificable e infalsificable | **INICIADA** (proyectos, tutores, aprendices y guías versionadas con asignación al proyecto) |
 | F4 | Entregas, archivos privados y versionado | Flujo real proyecto → guía → entrega → archivo → versión | **INICIADA** (recorrido HTTP en borrador, PI-001 y descarga de versión exacta) |
-| F5 | Revisiones y trazabilidad | Revisión de versión exacta sin alterar historial | No iniciada |
+| F5 | Revisiones y trazabilidad | Revisión de versión exacta sin alterar historial | **INICIADA** (PI-003/004 aprobadas; recorrido cualitativo y reapertura auditada probados) |
 | F6 | Diseño y experiencia integral | Todas las pantallas del recorrido, responsivas y accesibles | **ADELANTADA** (marca, sistema visual, portada, acceso y «Mi cuenta» según ADR-008) |
 | F7 | Repositorio, búsqueda y publicación | El visitante ve solo lo explícitamente publicado | No iniciada |
 | F8 | Operación, respaldo y seguridad | Restore probado y sin archivos privados accesibles por HTTP | **INICIADA** (integridad de blobs y descarga verificada; backup/restore pendientes) |
@@ -184,7 +184,7 @@ Estado: **INICIADA** (18-11-2026). Recorrido HTTP probado: guía asignada → en
 archivo privado → descarga exacta → nueva versión. Solo el último borrador admite cargas, sin
 sobrescribir las anteriores. Excepción PI-001 con policy, justificación, beneficiario, IP del
 servidor, fecha y UUID auditados. Se reutiliza el servicio privado y sus límites conservadores.
-Faltan transiciones académicas (PI-003), decisiones formales de PI-010, pruebas de fallos de
+PI-003 aprobada e implementada en el recorrido académico. Faltan decisiones formales de PI-010, pruebas de fallos de
 infraestructura y concurrencia en MySQL. La puerta F4 no se declara cerrada.
 
 ---
@@ -193,10 +193,15 @@ infraestructura y concurrencia en MySQL. La puerta F4 no se declara cerrada.
 
 - Revisión sobre versión concreta; comentarios conservados.
 - Estados explícitos de la entrega; una nueva versión no altera una revisión anterior.
-- Revisión descriptiva primero; rúbricas numéricas solo con `PI-004` aprobada.
+- PI-004 aprobada: Cumple/Requiere Ajustes con retroalimentación obligatoria; sin nota numérica.
 - Auditoría de autor, acción y fecha, separada del dato pedagógico.
 
 Puerta F5: línea de tiempo verificable y revisión inmutable.
+
+Estado (18-11-2026): **INICIADA**. Envío y congelamiento, inicio de revisión, resultado
+cualitativo, nuevo intento y reapertura auditada disponibles por HTTP. Fechas límite nullable
+en migración incremental, sin bloqueo temporal. Pruebas con SQLite en memoria; siguen
+pendientes QA visual, concurrencia MySQL y validación operativa. No se declara cerrada F5.
 
 ---
 

@@ -16,9 +16,10 @@ final class CreateSubmissionVersion
         return DB::transaction(function () use ($actor, $previous, $summary): SubmissionVersion {
             $submission = Submission::whereKey($previous->submission_id)->lockForUpdate()->firstOrFail();
             $previous = SubmissionVersion::findOrFail($previous->id);
-            Gate::forUser($actor)->authorize('upload', $previous);
+            Gate::forUser($actor)->authorize('createVersion', $previous);
             $number = (int) $submission->versions()->max('version_number') + 1;
             $version = $submission->versions()->create(['version_number' => $number, 'author_id' => $actor->id, 'summary' => $summary]);
+            $submission->update(['status' => 'borrador', 'lock_version' => $submission->lock_version + 1]);
             app(RecordAuditEvent::class)->execute($actor, $submission->project->institution_id, 'submission.version_created', 'submission_version', $version->id);
 
             return $version;
