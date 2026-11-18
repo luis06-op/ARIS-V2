@@ -734,3 +734,19 @@ Bloqueos: B3 solo autorizado para el entorno sintético; PI-005/006/007/009/010/
 pendientes. No se declaran cerradas F1/F5/F6/F8/F9.
 Siguiente objetivo: regenerar y verificar el paquete reproducible de fuentes con todos los
 cambios publicados y anexar la guía Hostinger.
+
+## 23. Sesión 2026-11-18 — Paquete de fuentes actualizado
+
+Desde el commit `21982449f3a9e0db72a3e35e3303d1ae71332a9a` y con árbol limpio se generaron
+dos ZIP en el directorio temporal aprobado: `aris-2198244-a.zip` y `aris-2198244-b.zip`.
+Ambos contienen **244 archivos** más manifiesto, son byte a byte idénticos (`cmp`) y pasaron
+`aris:verificar-paquete` con código 0. SHA-256 de ambos:
+
+```text
+e667a52c48dac2e3c5377bccc6b8334b111061899c2179b9a99d88733817095e
+```
+
+El paquete refleja las fases completadas en esta sesión, incluye la guía Hostinger y excluye
+dependencias, secretos, datos y assets compilados. No se subió al remoto; sigue siendo un
+paquete de fuentes que requiere `composer install`, `npm ci` y `npm run build`. No autoriza
+despliegue ni sustituye la validación del proveedor.
