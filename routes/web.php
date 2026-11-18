@@ -2,18 +2,21 @@
 
 use App\Http\Controllers\Academic\CatalogController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Audit\AuditController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Guides\GuideController;
 use App\Http\Controllers\Identity\AccessController;
 use App\Http\Controllers\Identity\MemberController;
+use App\Http\Controllers\Identity\MembershipImportController;
 use App\Http\Controllers\InicioController;
 use App\Http\Controllers\Projects\LearnerController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\TutorController;
 use App\Http\Controllers\Submissions\AcademicWorkflowController;
 use App\Http\Controllers\Submissions\EvidenceController;
+use App\Http\Controllers\Submissions\SearchController;
 use App\Http\Controllers\Submissions\SubmissionController;
 use App\Http\Controllers\Submissions\UnlinkedSubmissionController;
 use Illuminate\Support\Facades\Route;
@@ -58,9 +61,12 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/entregas/versiones/{version}/reabrir', [AcademicWorkflowController::class, 'reopen'])->name('entregas.reabrir');
     Route::post('/proyectos/{project}/aprendiz', LearnerController::class)->name('proyectos.aprendiz');
     Route::post('/accesos/{institution}/miembros', MemberController::class)->name('miembros.store');
+    Route::get('/accesos/{institution}/importar', [MembershipImportController::class, 'show'])->name('accesos.importar');
+    Route::post('/accesos/{institution}/importar', [MembershipImportController::class, 'store'])->name('accesos.importar.store');
     Route::post('/accesos/{institution}/catalogo', CatalogController::class)->name('catalogo.store');
     Route::post('/proyectos/{project}/entregas/excepcion', UnlinkedSubmissionController::class)->name('entregas.excepcion');
     Route::post('/proyectos/{project}/entregas', [SubmissionController::class, 'store'])->name('entregas.store');
+    Route::get('/entregas/buscar', SearchController::class)->name('entregas.buscar');
     Route::get('/entregas/versiones/{version}', [SubmissionController::class, 'show'])->name('entregas.show');
     Route::post('/entregas/versiones/{version}/versiones', [SubmissionController::class, 'version'])->name('entregas.version');
     Route::post('/entregas/versiones/{version}/evidencias', [EvidenceController::class, 'store'])->middleware('throttle:20,1')->name('evidencias.store');
@@ -69,6 +75,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/guias/versiones/{version}', [GuideController::class, 'show'])->name('guias.show');
     Route::patch('/guias/versiones/{version}', [GuideController::class, 'update'])->name('guias.update');
     Route::post('/guias/versiones/{version}/publicar', [GuideController::class, 'publish'])->name('guias.publish');
+    Route::get('/auditoria', AuditController::class)->name('auditoria.index');
     Route::get('/accesos', [AccessController::class, 'index'])->name('accesos.index');
     Route::get('/accesos/{institution}', [AccessController::class, 'show'])->name('accesos.show');
     Route::post('/accesos/{institution}', [AccessController::class, 'store'])->name('accesos.store');

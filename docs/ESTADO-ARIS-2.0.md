@@ -704,3 +704,33 @@ B3 deja de bloquear este entorno sintético; no se concede acceso a bases existe
 despliegue. Quedan pruebas de carga, concurrencia ampliada, instalación/restore y requisitos
 del hosting antes de declarar una candidata certificada. F1 no se cierra por esta suite sola.
 Siguiente objetivo: respaldo MySQL+storage, restauración aislada y guía Hostinger.
+
+## 21. Sesión 2026-11-18 — Respaldo, restauración y Hostinger
+
+Implementados `aris:respaldar` y `aris:restaurar-respaldo` con manifiesto y SHA-256.
+`BackupArchive` valida el ZIP sin extraer en producción; `MySqlClient` pasa credenciales por
+archivo de opciones temporal 0600. ADR-016 y `operations/RESPALDO-Y-RESTAURACION.md` documentan
+alcance, límites y custodia de APP_KEY. Guía en `deployment/HOSTINGER.md`.
+
+Ejecución real sobre MySQL 8.4.13 aislado: respaldo verificado
+(`0a4816d8fd2ce08199fbccfcc225bb16f754c8283673d6029a22f2e8ea76286f`), restauración en base
+y directorio nuevos con 1 blob y hash coincidente. Rechazo correcto de hash distinto y de
+ejecución sin mantenimiento, sin residuos. Nueve pruebas del verificador aprobadas. El cliente
+`mysql` requirió un enlace local a `libncursesw`; no se modificó el sistema.
+
+## 22. Sesión 2026-11-18 — Funciones complementarias
+
+Implementados búsqueda de entregas sobre campos reales con jurisdicción, visor de auditoría
+solo para administradores por institución e importación CSV de membresías con vista previa,
+validación de duplicados y alta auditada. ADR-017 y `operations/FUNCIONES-COMPLEMENTARIAS.md`
+documentan los límites: no se inventan competencias/módulos/fases, no se crean cuentas ni contraseñas,
+no se asignan roles y no se muestran IP ni justificaciones personales.
+
+Suite completa: **135 pruebas / 791 aserciones aprobadas** en SQLite, con Pint, lint, build
+y 47 documentos/68 enlaces correctos. Tres pruebas HTTP cubren aislamiento y filtros,
+denegación por rol/institución del visor y el ciclo vista previa/confirmación.
+
+Bloqueos: B3 solo autorizado para el entorno sintético; PI-005/006/007/009/010/011 y F7
+pendientes. No se declaran cerradas F1/F5/F6/F8/F9.
+Siguiente objetivo: regenerar y verificar el paquete reproducible de fuentes con todos los
+cambios publicados y anexar la guía Hostinger.

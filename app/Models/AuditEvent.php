@@ -22,6 +22,22 @@ class AuditEvent extends Model
         ];
     }
 
+    /** Detalles no sensibles para el visor Administrativo; excluye IP, justificación y correo. */
+    public function safeDetail(): string
+    {
+        if (! is_array($this->metadata)) {
+            return '';
+        }
+        $parts = [];
+        foreach (['proyecto', 'version', 'resultado', 'extension'] as $key) {
+            if (isset($this->metadata[$key]) && is_scalar($this->metadata[$key])) {
+                $parts[] = $key.': '.(string) $this->metadata[$key];
+            }
+        }
+
+        return implode(' · ', $parts);
+    }
+
     public function institution(): BelongsTo
     {
         return $this->belongsTo(Institution::class);

@@ -8,7 +8,10 @@
         <x-errores-formulario />
         @include('accesos.catalogo')
         <section class="aris-tarjeta p-5">
-            <h3 class="font-semibold">Membresías registradas</h3>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3 class="font-semibold">Membresías registradas</h3>
+                <a class="aris-enlace" href="{{ route('accesos.importar', $institucion) }}">Importar por lotes</a>
+            </div>
             <ul class="mt-4 space-y-3 text-sm">
                 @forelse ($membresias as $membresia)
                     <li>{{ $membresia->user->name }} · {{ $membresia->status }} · {{ $membresia->roles->pluck('name')->join(', ') ?: 'Sin roles' }}</li>

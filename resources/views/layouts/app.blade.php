@@ -38,7 +38,11 @@
                         </a>
 
                         <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>Proyectos</a>
+                        <a href="{{ route('entregas.buscar') }}" class="aris-nav-enlace" @if (request()->routeIs('entregas.buscar')) aria-current="page" @endif>Buscar entregas</a>
                         <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>Control de accesos</a>
+                        @can('viewAny', App\Models\AuditEvent::class)
+                            <a href="{{ route('auditoria.index') }}" class="aris-nav-enlace" @if (request()->routeIs('auditoria.*')) aria-current="page" @endif>Auditoría</a>
+                        @endcan
 
                         <form method="POST" action="{{ route('sesion.destroy') }}" class="md:mt-auto">
                             @csrf
