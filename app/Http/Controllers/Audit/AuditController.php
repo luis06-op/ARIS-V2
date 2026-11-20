@@ -24,10 +24,10 @@ class AuditController extends Controller
         Gate::authorize('viewInstitution', new AuditEvent(['institution_id' => $institutionId]));
 
         $filters = $request->validate([
-            'accion' => ['sometimes', 'string', 'max:120'],
-            'actor_id' => ['sometimes', 'integer'],
-            'desde' => ['sometimes', 'date_format:Y-m-d H:i'],
-            'hasta' => ['sometimes', 'date_format:Y-m-d H:i'],
+            'accion' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'actor_id' => ['sometimes', 'nullable', 'integer'],
+            'desde' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i'],
+            'hasta' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i'],
         ]);
         $events = AuditEvent::where('institution_id', $institutionId)
             ->with('actor')

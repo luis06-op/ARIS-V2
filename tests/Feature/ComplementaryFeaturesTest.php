@@ -36,6 +36,7 @@ class ComplementaryFeaturesTest extends TestCase
         $student = $this->member($institution, 'aprendiz');
         $ficha = $this->ficha($institution);
         $project = $this->project($ficha, $admin);
+        $project->update(['status' => 'activo']);
         app(ManageProjectTutor::class)->execute($admin, $project, $instructor, true);
         ProjectMembership::create(['project_id' => $project->id, 'user_id' => $student->id, 'function' => 'aprendiz', 'assigned_at' => today()]);
         $activity = ActivityVersion::create([

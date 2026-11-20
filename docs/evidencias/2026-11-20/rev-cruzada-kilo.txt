@@ -1,0 +1,53 @@
+[0m
+> code · kilo-auto/free
+[0m
+[0m→ [0mRead app/Queries/SearchSubmissions.php
+[0m→ [0mRead resources/css/app.css
+[0m→ [0mRead app/Models/Submission.php
+[0m→ [0mRead resources/views/publico/inicio.blade.php
+[0m→ [0mRead resources/views/layouts/app.blade.php
+[0m→ [0mRead resources/views/auditoria/indice.blade.php
+[0m→ [0mRead resources/views/entregas/buscar.blade.php
+Revisaré los archivos solicitados en modo solo lectura.
+[0m✱ [0mGrep "entregas\.show"[90m in . · 15 matches[0m
+[0m→ [0mRead app/Models/ActivityAssignment.php
+[0m→ [0mRead app/Models/ProjectMembership.php
+[0m→ [0mRead app/Models/Document.php
+[0m✱ [0mGrep "function buscar"[90m in app/Http/Controllers · 0 matches[0m
+[0m→ [0mRead app/Domain/Identity/InstitutionalAuthority.php
+[0m✱ [0mGlob "app/Http/Controllers/**/*Submission*"[90m 2 matches[0m
+[0m→ [0mRead app/Models/SubmissionVersion.php
+[0m→ [0mRead app/Http/Controllers/Submissions/SubmissionController.php
+[0m→ [0mRead app/Models/Project.php
+[0m→ [0mRead app/Models/Ficha.php
+[0m✱ [0mGrep "entregas\.search|SearchSubmissions"[90m in app/Http/Controllers · 2 matches[0m
+[0m→ [0mRead app/Models/InstitutionMembership.php
+[0m→ [0mRead app/Http/Controllers/Submissions/SearchController.php
+[0m✗ [0mRead app/Http/Controllers/AuditoriaController.php failed
+[91m[1mError: [0mFile not found: /home/andresdev/ARIS-V2/app/Http/Controllers/AuditoriaController.php
+[0m→ [0mRead app/Models/AuditEvent.php
+nVersion` tiene `getRouteKeyName()`. |
+
+### 🟡 MEDIUM — Accesibilidad / UX rota
+
+| Archivo:línea | Problema |
+|---|---|
+| `resources/views/layouts/app.blade.php:97` | Email truncado con `title="{{ auth()->user()->email }}"`: **no accesible en touch** y lectores de pantalla ignoran `title` inconsistente. Usar tooltip ARIA o mostrar completo en `lg:`. |
+| `resources/views/layouts/app.blade.php:98` | `role="img"` en `<span>` para iniciales: semánticamente incorrecto. `role="img"` es para gráficos; aquí basta `aria-label` en el span sin rol, o `role="status"`. |
+| `resources/css/app.css:384` | Override `html[data-a11y-links='subrayado'] a:not(.aris-btn)` subraya **también** `.aris-nav-enlace` (sidebar), rompiendo diseño de navegación activa. Añadir `:not(.aris-nav-enlace)` o clase utilitaria `.aris-enlace-forzado`. |
+
+### 🟢 LOW — Calidad / Mantenibilidad
+
+| Archivo:línea | Problema |
+|---|---|
+| `app/Queries/SearchSubmissions.php:26,37` | Subqueries en `whereIn` sin `whereNotNull('id')`. Si algún `select` devolviera NULL (p. ej. FK suelta), `WHERE IN (NULL, ...)` cambia semántica en MySQL 8. Añadir `->whereNotNull('id')` defensivo. |
+| `resources/views/publico/inicio.blade.php:26` | Botón "Explorar proyectos" → `#proyectos` (anchor). Si la sección se oculta condicionalmente en futuro, el enlace queda huérfano. Verificar que `#proyectos` siempre exista (hoy sí). |
+| `app/Models/Submission.php:38-41` | Comentario dice "Última versión por número" pero relación no garantiza unicidad si hay duplicados en `version_number` (constraint `UNIQUE(padre_id, version_number)` evita esto, pero no está en el modelo). Documentar dependencia de constraint BD. |
+
+---
+
+### ✅ Sin problemas detectados
+- `resources/views/auditoria/indice.blade.php`: tabla con `<caption class="sr-only">`, `<th scope="col">`, semántica correcta.
+- `resources/css/app.css`: `prefers-reduced-motion`, `color-scheme: dark`, focus-visible, contraste alto bien implementados.
+- `publico/inicio.blade.php`: sin datos ficticios; estado vacío informativo.
+- `SearchSubmissions.php`: eager loading `latestVersion` + `withCount('versions')` evita N+1; scopes de autorización correctos.

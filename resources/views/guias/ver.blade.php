@@ -18,6 +18,7 @@
                 <form method="POST" action="{{ route('guias.update', $version) }}" class="mt-4 space-y-4">
                     @csrf
                     @method('PATCH')
+                    <input type="hidden" name="lock_version" value="{{ $version->lock_version }}">
                     <label class="aris-etiqueta" for="title">Título</label><input class="aris-campo" id="title" name="title" value="{{ old('title', $version->title) }}" maxlength="180" required>
                     <label class="aris-etiqueta" for="content">Contenido</label><textarea class="aris-campo" id="content" name="content" rows="10" maxlength="50000" required>{{ old('content', $version->content) }}</textarea>
                     <button class="aris-btn aris-btn-verde" type="submit">Guardar guía</button>

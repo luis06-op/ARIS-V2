@@ -14,6 +14,7 @@ class GuideRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'lock_version' => ['sometimes', 'nullable', 'integer'],
             'code' => [$this->route('version') ? 'sometimes' : 'required', 'string', 'max:40'],
             'title' => ['required', 'string', 'max:180'],
             'content' => ['required', 'string', 'max:50000'],

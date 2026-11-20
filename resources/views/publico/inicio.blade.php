@@ -23,7 +23,7 @@
                 <a href="{{ route('registro.create') }}" class="aris-btn aris-btn-verde px-6 py-3">
                     Crear una cuenta
                 </a>
-                <a href="#proyectos" class="aris-btn aris-btn-cian px-6 py-3">
+                <a href="#proyectos" class="aris-btn aris-btn-fantasma px-6 py-3">
                     Explorar proyectos
                 </a>
             </div>

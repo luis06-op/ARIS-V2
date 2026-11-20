@@ -1,0 +1,7 @@
+{
+    "version": "8.4.13",
+    "base": "aris_test_certificacion",
+    "socket": "/tmp/opencode/aris-mysql5-S4gl3m/run/mysql.sock",
+    "directorio": "/var/lib/mysql/"
+}
+{"tool":"phpunit","result":"passed","tests":169,"passed":169,"assertions":893,"duration_ms":14110}

@@ -37,11 +37,36 @@
                             Mi cuenta
                         </a>
 
-                        <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>Proyectos</a>
-                        <a href="{{ route('entregas.buscar') }}" class="aris-nav-enlace" @if (request()->routeIs('entregas.buscar')) aria-current="page" @endif>Buscar entregas</a>
-                        <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>Control de accesos</a>
+                        <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="2" />
+                                <path d="M3 10h18M9 4v16" />
+                            </svg>
+                            Proyectos
+                        </a>
+                        <a href="{{ route('entregas.buscar') }}" class="aris-nav-enlace" @if (request()->routeIs('entregas.buscar')) aria-current="page" @endif>
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m20 20-3.5-3.5" />
+                            </svg>
+                            Buscar entregas
+                        </a>
+                        <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="9" cy="8" r="3.2" />
+                                <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                                <path d="M17 10.5h5M19.5 8v5" />
+                            </svg>
+                            Control de accesos
+                        </a>
                         @can('viewAny', App\Models\AuditEvent::class)
-                            <a href="{{ route('auditoria.index') }}" class="aris-nav-enlace" @if (request()->routeIs('auditoria.*')) aria-current="page" @endif>Auditoría</a>
+                            <a href="{{ route('auditoria.index') }}" class="aris-nav-enlace" @if (request()->routeIs('auditoria.*')) aria-current="page" @endif>
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M6 3h9l4 4v14H6z" />
+                                    <path d="M14 3v5h5M9 13h6M9 17h6" />
+                                </svg>
+                                Auditoría
+                            </a>
                         @endcan
 
                         <form method="POST" action="{{ route('sesion.destroy') }}" class="md:mt-auto">
@@ -69,8 +94,8 @@
                     </div>
 
                     <div class="flex items-center gap-3 text-sm text-tenue">
-                        <span class="hidden sm:inline">{{ auth()->user()->email }}</span>
-                        <span class="flex h-9 w-9 items-center justify-center rounded-full border border-verde/30 bg-verde/10 text-xs font-bold text-verde" aria-hidden="true">
+                        <span class="hidden max-w-48 truncate sm:inline" title="{{ auth()->user()->email }}">{{ auth()->user()->email }}</span>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full border border-verde/30 bg-verde/10 text-xs font-bold text-verde" aria-label="Iniciales de {{ auth()->user()->name }}">
                             {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 2)) }}
                         </span>
                     </div>

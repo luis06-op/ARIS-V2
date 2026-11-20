@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Submission extends Model
 {
@@ -31,6 +32,12 @@ class Submission extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(SubmissionVersion::class);
+    }
+
+    /** Última versión por número, para listados que solo muestran la más reciente. */
+    public function latestVersion(): HasOne
+    {
+        return $this->hasOne(SubmissionVersion::class, 'submission_id')->latest('version_number');
     }
 
     public function documents(): HasMany

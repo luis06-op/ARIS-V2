@@ -46,10 +46,11 @@
         </section>
 
         <section class="aris-tarjeta-plana p-6">
-            <h3 class="font-semibold">Eventos ({{ $eventos->total() }})</h3>
+            <h2 class="font-semibold">Eventos ({{ $eventos->total() }})</h2>
             <div class="mt-4 overflow-x-auto">
                 <table class="w-full min-w-[640px] text-left text-sm">
-                    <thead class="text-tenue"><tr><th class="p-2">Fecha</th><th class="p-2">Acción</th><th class="p-2">Actor</th><th class="p-2">Recurso</th><th class="p-2">Detalle</th></tr></thead>
+                    <caption class="sr-only">Eventos de auditoría de la institución, ordenados por fecha.</caption>
+                    <thead class="text-tenue"><tr><th scope="col" class="p-2">Fecha</th><th scope="col" class="p-2">Acción</th><th scope="col" class="p-2">Actor</th><th scope="col" class="p-2">Recurso</th><th scope="col" class="p-2">Detalle</th></tr></thead>
                     <tbody class="divide-y divide-white/5">
                         @forelse ($eventos as $evento)
                             <tr>

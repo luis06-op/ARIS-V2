@@ -49,29 +49,36 @@ class ProjectController extends Controller
     {
         Gate::authorize('view', $project);
 
+        // Se evalúa una sola vez cada comprobación de autorización para no repetir
+        // consultas de policies en la misma vista.
+        $puedeGestionarAprendices = Gate::allows('manageLearners', $project);
+        $puedeAutorizarExcepcion = Gate::allows('authorizeUnlinkedException', $project);
+        $puedeActualizar = Gate::allows('update', $project);
+        $puedeGestionarTutores = Gate::allows('manageTutors', $project);
+
         return view('proyectos.ver', [
             'proyecto' => $project->load('ficha.especialidad'),
-            'candidatosAprendices' => Gate::allows('manageLearners', $project)
+            'candidatosAprendices' => $puedeGestionarAprendices
                 ? User::whereHas('institutionMemberships', fn ($query) => $query->where('institution_id', $project->institution_id)
                     ->whereHas('roles', fn ($roles) => $roles->where('code', 'aprendiz')))
                     ->orWhereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'aprendiz'))
                     ->orderBy('name')->get() : collect(),
-            'aprendices' => Gate::allows('authorizeUnlinkedException', $project)
+            'aprendices' => $puedeAutorizarExcepcion
                 ? User::whereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'aprendiz')
                     ->whereDate('assigned_at', '<=', today())->where(fn ($dates) => $dates->whereNull('ended_at')->orWhereDate('ended_at', '>', today())))->get() : collect(),
             'entregas' => Submission::where('project_id', $project->id)
-                ->when(! Gate::allows('authorizeUnlinkedException', $project), fn ($query) => $query->where('author_id', auth()->id()))
+                ->when(! $puedeAutorizarExcepcion, fn ($query) => $query->where('author_id', auth()->id()))
                 ->with(['versions' => fn ($query) => $query->orderByDesc('version_number')])->orderByDesc('id')->get(),
             'asignaciones' => ActivityAssignment::where('project_id', $project->id)->where('status', 'activa')
                 ->where('target_type', 'proyecto')->where('target_ref', (string) $project->id)->where('assigned_at', '<=', now())
                 ->whereHas('activityVersion', fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at'))
                 ->with('activityVersion')->get(),
             'guias' => ActivityVersion::whereHas('activity', fn ($query) => $query->where('project_id', $project->id))
-                ->when(! Gate::allows('update', $project), fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at')
+                ->when(! $puedeActualizar, fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at')
                     ->whereHas('assignments', fn ($assignment) => $assignment->where('project_id', $project->id)
                         ->where('target_type', 'proyecto')->where('target_ref', (string) $project->id)->where('status', 'activa')->where('assigned_at', '<=', now())))
                 ->orderByDesc('id')->get(),
-            'instructores' => Gate::allows('manageTutors', $project)
+            'instructores' => $puedeGestionarTutores
                 ? User::whereHas('institutionMemberships', fn ($query) => $query->where('institution_id', $project->institution_id)
                     ->whereHas('roles', fn ($roles) => $roles->where('code', 'instructor')))
                     ->orWhereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'instructor'))

@@ -1,0 +1,65 @@
+[0m
+> code · kilo-auto/free
+[0m
+[0m→ [0mRead app/Queries/SearchSubmissions.php
+[0m→ [0mRead app/Http/Controllers/Projects/ProjectController.php
+[0m→ [0mRead resources/views/entregas/buscar.blade.php
+[0m→ [0mRead app/Models/ActivityVersion.php
+[0m→ [0mRead tests/Feature/Submissions/SearchPerformanceTest.php
+[0m✱ [0mGrep "latestVersion|withCount"[90m in app/Models · 0 matches[0m
+[0m→ [0mRead app/Models/Submission.php
+## Auditoría de rendimiento ARIS-V2 — Hallazgos confirmados
+
+### 1. Confirmación con archivo:línea
+
+| Hallazgo | Archivo:línea | Evidencia |
+|----------|---------------|-----------|
+| **Carga todas las versiones** cuando la vista solo usa `latest` + `count` | `app/Queries/SearchSubmissions.php:57` | `->with(['versions' => fn ($q) => $q->orderByDesc('version_number')])` carga colección completa |
+| **Listado de proyectos sin paginar** en `show()` | `app/Http/Controllers/Projects/ProjectController.php:69-71` | `->get()` sin `paginate()`; carga todas las entregas + todas sus versiones |
+| **Prueba no mide carga/render** | `tests/Feature/Submissions/SearchPerformanceTest.php:65-76` | Solo verifica que *tras* eager load no hay N+1; no mide queries iniciales, memoria ni tiempo de render |
+
+### 2. Propuesta concreta y de bajo riesgo
+
+**A. SearchSubmissions.php** — Reemplazar eager load de `versions` por:
+```php
+// En Submission.php añadir:
+public function latestVersion(): HasOne
+{
+    return $this->hasOne(SubmissionVersion::class)->latest('version_number');
+}
+
+// En SearchSubmissions.php:57 cambiar a:
+->with([
+    'project.ficha.especialidad',
+    'latestVersion',
+])
+->withCount('versions')
+```
+
+**B. ProjectController.php:69-71** — Paginar y usar misma estrategia:
+```php
+->with(['latestVersion'])
+->withCount('versions')
+->orderByDesc('id')
+->paginate(15)  // o 20
+```
+
+**C. Vista buscar.blade.php** — Cambiar acceso:
+- L54: `$entrega->versions->first()` → `$entrega->latestVersion`
+- L58: `$entrega->versions->count()` → `$entrega->versions_count`
+
+### 3. Impacto esperado
+
+| Métrica | Antes | Después | Mejora |
+|---------|-------|---------|--------|
+| Consultas por búsqueda (15 resultados, 2 vers/entrega) | 1 + 30 (N+1 evitado pero carga completa) | 3 (submissions + latestVersion + count) | **~90% menos rows transferidas** |
+| Memoria PHP (colección versions) | O(N×V) | O(N) | **Proporcional a versiones por entrega** |
+| ProjectController::show | Carga total sin límite | Paginado 15 | **Evita OOM en proyectos grandes** |
+
+### 4. Riesgos de cambiar la vista Blade
+
+| Riesgo | Probabilidad | Mitigación |
+|--------|--------------|------------|
+| `$entrega->latestVersion` devuelve `null` si no hay versiones (link a 404) | Baja — validar en vista con `??` o `optional()` | `route('entregas.show', $entrega->latestVersion ?? abort(404))` |
+| Código externo accede a `$entrega->versions` esperando colección completa | Media — buscar usos con `grep -r "versions->" resources/views app/Http` | Mantener relación `versions()` disponible; solo no eager-load por defecto |
+| Tests existentes fallen por cambio de API | Baja — test actual usa `versions->first()` y `versions->count()` | Actualizar test para usar `latestVersion` y `versions_count` |

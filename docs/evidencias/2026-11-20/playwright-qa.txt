@@ -1,0 +1,6 @@
+
+> test:browser
+> node scripts/qa-navegador.mjs
+
+QA de navegador aprobada; artefactos: /tmp/opencode/aris-browser-zJwoXE
+Evidencia QA: /tmp/opencode/aris-browser-zJwoXE

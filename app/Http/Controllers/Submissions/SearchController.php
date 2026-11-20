@@ -14,11 +14,11 @@ class SearchController extends Controller
     public function __invoke(Request $request, SearchSubmissions $search, VisibleProjects $projects): View
     {
         $filters = $request->validate([
-            'q' => ['sometimes', 'string', 'max:120'],
-            'estado' => ['sometimes', 'string', 'in:borrador,entregada,en_revision,ajustes_solicitados,revisada,retirada'],
-            'ficha_id' => ['sometimes', 'integer', 'exists:fichas,id'],
-            'desde' => ['sometimes', 'date_format:Y-m-d'],
-            'hasta' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'estado' => ['sometimes', 'nullable', 'string', 'in:borrador,entregada,en_revision,ajustes_solicitados,revisada,retirada'],
+            'ficha_id' => ['sometimes', 'nullable', 'integer', 'exists:fichas,id'],
+            'desde' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'hasta' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
         ]);
 
         $fichas = Ficha::whereIn('id', $projects->forUser($request->user())

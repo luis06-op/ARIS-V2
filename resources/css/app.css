@@ -212,7 +212,7 @@
     }
 
     .aris-campo::placeholder {
-        color: #6d8599;
+        color: #8ba5bd;
     }
 
     .aris-campo:hover {
@@ -250,15 +250,16 @@
     /* --- Enlaces --- */
     .aris-enlace {
         color: var(--color-cian-claro);
-        text-decoration: none;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
         font-weight: 600;
         transition: opacity 140ms ease;
     }
 
     .aris-enlace:hover {
         opacity: 0.82;
-        text-decoration: underline;
-        text-underline-offset: 3px;
+        text-decoration-thickness: 2px;
     }
 
     .aris-enlace-suave {
@@ -380,7 +381,7 @@ html[data-a11y-size='muy-grande'] {
 }
 
 /* Enlaces siempre subrayados. */
-html[data-a11y-links='subrayado'] a:not(.aris-btn) {
+html[data-a11y-links='subrayado'] a:not(.aris-btn):not(.aris-nav-enlace) {
     text-decoration: underline;
     text-underline-offset: 3px;
 }

@@ -47,15 +47,19 @@
         </section>
 
         <section class="aris-tarjeta-plana p-6">
-            <h3 class="font-semibold">Resultados ({{ $resultados->total() }})</h3>
+            <h2 class="font-semibold">Resultados ({{ $resultados->total() }})</h2>
             <ul class="mt-4 divide-y divide-white/5">
                 @forelse ($resultados as $entrega)
                     <li class="py-3">
-                        <a class="aris-enlace" href="{{ route('entregas.show', $entrega->versions()->orderByDesc('version_number')->firstOrFail()) }}">{{ $entrega->title }}</a>
+                    @if ($entrega->latestVersion)
+                        <a class="aris-enlace" href="{{ route('entregas.show', $entrega->latestVersion) }}">{{ $entrega->title }}</a>
+                    @else
+                        <span class="font-semibold">{{ $entrega->title }}</span>
+                    @endif
                         <p class="mt-1 text-sm text-tenue">
                             {{ $entrega->project->title }} · {{ $entrega->status }} ·
                             {{ $entrega->project->ficha?->numero ?? 'Sin ficha' }} ·
-                            {{ $entrega->versions()->count() }} versión(es)
+                            {{ $entrega->versions_count }} versión(es)
                         </p>
                     </li>
                 @empty

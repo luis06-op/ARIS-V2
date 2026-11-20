@@ -12,6 +12,8 @@ use App\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class GuideController extends Controller
@@ -32,9 +34,21 @@ class GuideController extends Controller
 
     public function update(GuideRequest $request, ActivityVersion $version, SaveGuideVersion $action): RedirectResponse
     {
-        $updated = $action->execute($request->user(), $version, $request->validated());
+        try {
+            $updated = $action->execute($request->user(), $version, $request->validated());
 
-        return to_route('guias.show', $updated)->with('status', 'Guía guardada. Las versiones publicadas conservan su contenido original.');
+            return to_route('guias.show', $updated)->with('status', 'Guía guardada. Las versiones publicadas conservan su contenido original.');
+        } catch (ValidationException $error) {
+            // Si el conflicto es de revisión (lock_version), preservar la revisión actual del
+            // servidor para que el formulario no use una revisión obsoleta en un segundo intento.
+            // El contenido enviado por el cliente se conserva mediante withInput().
+            if ($error->errors()['lock_version'] ?? null) {
+                $version->refresh();
+                Session::flash('guias.lock_version', $version->lock_version);
+            }
+
+            return back()->withErrors($error->errors())->withInput();
+        }
     }
 
     public function publish(Request $request, ActivityVersion $version, PublishAndAssignGuide $action): RedirectResponse

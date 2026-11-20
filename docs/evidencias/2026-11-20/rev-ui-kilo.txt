@@ -1,0 +1,68 @@
+[0m
+> code · kilo-auto/free
+[0m
+[0m$ [0mcd /home/andresdev/ARIS-V2 && ls resources/views/layouts/ publico/ auth/ entregas/ proyectos/ auditoria/ 2>&1
+ls: no se puede acceder a 'publico/': No existe el fichero o el directorio
+ls: no se puede acceder a 'auth/': No existe el fichero o el directorio
+ls: no se puede acceder a 'entregas/': No existe el fichero o el directorio
+ls: no se puede acceder a 'proyectos/': No existe el fichero o el directorio
+ls: no se puede acceder a 'auditoria/': No existe el fichero o el directorio
+resources/views/layouts/:
+app.blade.php
+publico.blade.php
+[0m
+[0m✱ [0mGlob "resources/views/**/*.blade.php"[90m 32 matches[0m
+[0m→ [0mRead resources/views/layouts/app.blade.php
+[0m→ [0mRead resources/views/publico/inicio.blade.php
+[0m→ [0mRead resources/views/auth/ingresar.blade.php
+[0m→ [0mRead resources/views/entregas/buscar.blade.php
+[0m→ [0mRead resources/views/entregas/ver.blade.php
+[0m→ [0mRead resources/views/proyectos/indice.blade.php
+[0m→ [0mRead resources/views/auditoria/indice.blade.php
+[0m→ [0mRead resources/css/app.css
+**Auditoría UI/UX — ARIS-V2 (solo lectura)**
+
+## 1. Problemas (archivo:línea)
+- `layouts/app.blade.php:32-45` — nav inconsistente: solo "Mi cuenta" y "Cerrar sesión" llevan SVG; el resto texto plano.
+- `layouts/app.blade.php:65-69` — header sin breadcrumbs; título `text-lg` compite con `h2 text-2xl` de vistas hijas.
+- `layouts/app.blade.php:17` — sidebar `md:w-64` fijo; en móvil se apila con `flex-wrap`, orden visual inestable.
+- `layouts/app.blade.php:73` — avatar iniciales `aria-hidden="true"` sin `role="img"`/`aria-label`.
+- `publico/inicio.blade.php:26` — CTA secundario "Explorar proyectos" usa `aris-btn-cian` (color primario) compitiendo con "Crear una cuenta".
+- `publico/inicio.blade.php:62` — texto "Sin publicaciones todavía" estático junto al empty state, redundante.
+- `auth/ingresar.blade.php:66` — "← Volver al inicio" usa glifo unicode, no SVG; inconsistente con el resto.
+- `entregas/buscar.blade.php:54` — enlace a `latestVersion ?? abort(404)` puede disparar 404/500 desde la vista; sin estado vacío por item.
+- `entregas/buscar.blade.php:50` — `h3 font-semibold` vs `h2 text-xl` del formulario: jerarquía plana.
+- `entregas/ver.blade.php:54` — sección "Evaluación" con `h3 font-semibold` sin peso visual diferenciado frente a la tarjeta principal.
+- `entregas/ver.blade.php:93-97` — historial de versiones como chips inline pequeños; difícil de escanear.
+- `proyectos/indice.blade.php:26` — `ucfirst($proyecto->status)` en español mezclado con claves internas.
+- `auditoria/indice.blade.php:52` — `<th>` sin `scope="col"`; tabla sin `<caption>`.
+- `auditoria/indice.blade.php:34` — fechas como `type=text` con placeholder, no `datetime-local`.
+- `resources/css/app.css:215` — placeholder `#6d8599` sobre `#081220` (~4.4:1, límite).
+- `resources/css/app.css:251-262` — enlaces sin subrayado por defecto (solo hover), depende de color.
+- `resources/css/app.css:330` — `white-space: nowrap` en nav puede desbordar en móvil.
+
+## 2. Propuestas por archivo
+- `layouts/app.blade.php`: unificar iconos SVG en todos los items de nav; añadir breadcrumbs; `truncate` en nombre/email; `aria-label` al avatar.
+- `publico/inicio.blade.php`: CTA secundario → `aris-btn-fantasma`; eliminar redundancia L62.
+- `auth/ingresar.blade.php`: reemplazar glifo por SVG flecha izquierda; añadir `aria-describedby` en errores (ya parcial).
+- `entregas/buscar.blade.php`: elevar resultados a `h2`; manejar null de `latestVersion` antes del enlace; añadir icono de búsqueda al botón.
+- `entregas/ver.blade.php`: jerarquía `h2`/`h3` consistente; historial como lista vertical con estado.
+- `proyectos/indice.blade.php`: mapear status a etiqueta institucional en español.
+- `auditoria/indice.blade.php`: `scope="col"`, `<caption>` oculto, `datetime-local`.
+- `resources/css/app.css`: subrayado por defecto en `.aris-enlace` (no solo hover); subir contraste del placeholder; `white-space: normal` en móvil para nav.
+
+## 3. WCAG 2.2 AA
+- Contraste placeholder (4.4:1) → subir a ≥4.5:1 (criterio 1.4.3).
+- Enlaces por color solo → añadir subrayado persistente (1.4.1).
+- Objetivos táctiles nav/enlaces inline <44px → `min-height: 44px` (2.5.8).
+- Tabla sin `scope`/`caption` → añadir (1.3.1).
+- Dropzone solo mouse → asegurar operabilidad por teclado del input (2.1.1) — ya parcial.
+- `aria-current` correcto en nav e historial (2.4.8) — mantener.
+
+## 4. Iconografía SVG consistente
+- Set único: `viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`, `stroke-width="1.7"`, `stroke-linecap/linejoin="round"`, tamaño `h-4 w-4` (nav) / `h-5 w-5` (acciones).
+- Todos `aria-hidden="true"`; texto visible adyacente.
+- Aplicar en: todos los items de nav, "Volver al inicio", botones de acción (Enviar, Revisar, Reabrir), enlaces de evidencias/historial, icono de búsqueda.
+- Reemplazar glifos unicode (←) por SVG.
+
+Identidad ARIS (noche/verde/cian, Instrument Sans) conservada. Sin contenido ficticio añadido.

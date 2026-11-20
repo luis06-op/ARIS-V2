@@ -39,7 +39,9 @@ class JurisdictionIntegrityTest extends TestCase
     public function test_new_migrations_rollback_and_reapply_in_isolated_database(): void
     {
         try {
-            $this->artisan('migrate:rollback', ['--step' => count(glob(database_path('migrations/2026_11_18_*.php'))), '--force' => true])->assertSuccessful();
+            // Se revierte todo el lote de migraciones (incluida la nueva de lock_version) para
+            // comprobar que el esquema puede deshacerse y volver a aplicarse limpiamente.
+            $this->artisan('migrate:rollback', ['--force' => true])->assertSuccessful();
             $this->assertFalse(Schema::hasColumn('submissions', 'fecha_limite_entrega'));
             $this->assertFalse(Schema::hasColumn('projects', 'ficha_id'));
             $this->assertFalse(Schema::hasTable('especialidades'));

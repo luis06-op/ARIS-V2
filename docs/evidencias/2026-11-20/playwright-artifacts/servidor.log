@@ -1,0 +1,313 @@
+[Fri Nov 20 09:42:07 2026] PHP 8.5.12 Development Server (http://127.0.0.1:43773) started
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41836 Accepted
+[Fri Nov 20 14:42:08 2026] 127.0.0.1:41836 [GET] URI: /ingresar
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41836 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41840 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41842 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41840 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41842 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41840 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41842 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41846 Accepted
+[Fri Nov 20 14:42:08 2026] 127.0.0.1:41846 [POST] URI: /ingresar
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41846 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41848 Accepted
+[Fri Nov 20 14:42:08 2026] 127.0.0.1:41848 [GET] URI: /cuenta
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41848 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41856 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41872 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41856 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41872 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41856 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41872 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41882 Accepted
+[Fri Nov 20 14:42:08 2026] 127.0.0.1:41882 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41882 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41888 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41902 Accepted
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41888 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41902 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41888 Closing
+[Fri Nov 20 09:42:08 2026] 127.0.0.1:41902 Closing
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41906 Accepted
+[Fri Nov 20 14:42:09 2026] 127.0.0.1:41906 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41906 Closing
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41908 Accepted
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41920 Accepted
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41908 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41920 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41908 Closing
+[Fri Nov 20 09:42:09 2026] 127.0.0.1:41920 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41934 Accepted
+[Fri Nov 20 14:42:10 2026] 127.0.0.1:41934 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41934 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41944 Accepted
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41956 Accepted
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41944 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41956 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41944 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41956 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41962 Accepted
+[Fri Nov 20 14:42:10 2026] 127.0.0.1:41962 [GET] URI: /ingresar
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41962 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41970 Accepted
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41984 Accepted
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41970 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41984 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41970 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41984 Closing
+[Fri Nov 20 09:42:10 2026] 127.0.0.1:41988 Accepted
+[Fri Nov 20 14:42:10 2026] 127.0.0.1:41988 [POST] URI: /ingresar
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:41988 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42000 Accepted
+[Fri Nov 20 14:42:11 2026] 127.0.0.1:42000 [GET] URI: /cuenta
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42000 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42002 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42012 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42002 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42012 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42002 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42012 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42014 Accepted
+[Fri Nov 20 14:42:11 2026] 127.0.0.1:42014 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42014 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42016 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42024 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42016 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42024 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42016 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42024 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42034 Accepted
+[Fri Nov 20 14:42:11 2026] 127.0.0.1:42034 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42034 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42044 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42054 Accepted
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42044 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42054 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42044 Closing
+[Fri Nov 20 09:42:11 2026] 127.0.0.1:42054 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42062 Accepted
+[Fri Nov 20 14:42:12 2026] 127.0.0.1:42062 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42062 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42068 Accepted
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42070 Accepted
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42068 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42070 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42068 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42070 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42072 Accepted
+[Fri Nov 20 14:42:12 2026] 127.0.0.1:42072 [GET] URI: /ingresar
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42072 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42076 Accepted
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42082 Accepted
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42076 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42082 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42076 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42082 Closing
+[Fri Nov 20 09:42:12 2026] 127.0.0.1:42096 Accepted
+[Fri Nov 20 14:42:12 2026] 127.0.0.1:42096 [POST] URI: /ingresar
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42096 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42100 Accepted
+[Fri Nov 20 14:42:13 2026] 127.0.0.1:42100 [GET] URI: /cuenta
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42100 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42102 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42112 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42102 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42112 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42102 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42112 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42114 Accepted
+[Fri Nov 20 14:42:13 2026] 127.0.0.1:42114 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42114 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42122 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42126 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42122 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42126 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42122 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42126 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42130 Accepted
+[Fri Nov 20 14:42:13 2026] 127.0.0.1:42130 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42130 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42136 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42146 Accepted
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42136 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42146 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42136 Closing
+[Fri Nov 20 09:42:13 2026] 127.0.0.1:42146 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42154 Accepted
+[Fri Nov 20 14:42:14 2026] 127.0.0.1:42154 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42154 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42170 Accepted
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42182 Accepted
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42170 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42182 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42170 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:42182 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57958 Accepted
+[Fri Nov 20 14:42:14 2026] 127.0.0.1:57958 [GET] URI: /ingresar
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57958 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57968 Accepted
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57982 Accepted
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57968 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57982 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57968 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57982 Closing
+[Fri Nov 20 09:42:14 2026] 127.0.0.1:57992 Accepted
+[Fri Nov 20 14:42:14 2026] 127.0.0.1:57992 [POST] URI: /ingresar
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:57992 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58008 Accepted
+[Fri Nov 20 14:42:15 2026] 127.0.0.1:58008 [GET] URI: /cuenta
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58008 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58018 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58032 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58018 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58032 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58018 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58032 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58042 Accepted
+[Fri Nov 20 14:42:15 2026] 127.0.0.1:58042 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58042 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58054 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58066 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58054 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58066 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58054 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58066 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58072 Accepted
+[Fri Nov 20 14:42:15 2026] 127.0.0.1:58072 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58072 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58082 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58094 Accepted
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58082 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58094 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58082 Closing
+[Fri Nov 20 09:42:15 2026] 127.0.0.1:58094 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58096 Accepted
+[Fri Nov 20 14:42:16 2026] 127.0.0.1:58096 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58096 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58100 Accepted
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58112 Accepted
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58100 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58112 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58100 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58112 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58116 Accepted
+[Fri Nov 20 14:42:16 2026] 127.0.0.1:58116 [GET] URI: /ingresar
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58116 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58130 Accepted
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58146 Accepted
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58130 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58146 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58130 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58146 Closing
+[Fri Nov 20 09:42:16 2026] 127.0.0.1:58150 Accepted
+[Fri Nov 20 14:42:16 2026] 127.0.0.1:58150 [POST] URI: /ingresar
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58150 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58164 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58164 [GET] URI: /cuenta
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58164 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58170 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58186 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58170 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58186 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58170 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58186 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58194 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58194 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58194 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58200 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58204 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58200 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58204 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58200 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58204 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58208 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58208 [POST] URI: /entregas/versiones/1/evidencias
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58208 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58222 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58222 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58222 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58232 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58240 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58232 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58240 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58232 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58240 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58242 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58242 [POST] URI: /entregas/versiones/1/enviar
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58242 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58246 Accepted
+[Fri Nov 20 14:42:17 2026] 127.0.0.1:58246 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58246 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58262 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58274 Accepted
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58262 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58274 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58262 Closing
+[Fri Nov 20 09:42:17 2026] 127.0.0.1:58274 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58286 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58286 [GET] URI: /ingresar
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58286 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58290 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58302 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58290 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58302 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58290 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58302 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58314 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58314 [POST] URI: /ingresar
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58314 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58318 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58318 [GET] URI: /cuenta
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58318 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58324 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58336 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58324 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58336 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58324 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58336 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58346 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58346 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58346 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58348 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58354 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58348 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58354 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58348 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58354 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58370 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58370 [POST] URI: /entregas/versiones/1/revision/iniciar
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58370 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58384 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58384 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58384 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58394 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58408 Accepted
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58394 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58408 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58394 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58408 Closing
+[Fri Nov 20 09:42:18 2026] 127.0.0.1:58422 Accepted
+[Fri Nov 20 14:42:18 2026] 127.0.0.1:58422 [POST] URI: /entregas/versiones/1/revision/completar
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58422 Closing
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58436 Accepted
+[Fri Nov 20 14:42:19 2026] 127.0.0.1:58436 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58436 Closing
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58446 Accepted
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58454 Accepted
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58446 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58454 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58446 Closing
+[Fri Nov 20 09:42:19 2026] 127.0.0.1:58454 Closing
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58458 Accepted
+[Fri Nov 20 14:42:20 2026] 127.0.0.1:58458 [POST] URI: /entregas/versiones/1/reabrir
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58458 Closing
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58468 Accepted
+[Fri Nov 20 14:42:20 2026] 127.0.0.1:58468 [GET] URI: /entregas/versiones/1
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58468 Closing
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58484 Accepted
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58490 Accepted
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58484 [200]: GET /build/assets/app-DxOWXsWH.css
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58490 [200]: GET /build/assets/app-CQl_89Vq.js
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58484 Closing
+[Fri Nov 20 09:42:20 2026] 127.0.0.1:58490 Closing

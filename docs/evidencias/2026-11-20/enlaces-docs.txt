@@ -1,0 +1,7 @@
+Archivos Markdown revisados: 50
+Enlaces relativos comprobados: 75
+Resultado: 4 enlace(s) roto(s):
+  - docs/ESTADO-ARIS-2.0.md: `/tmp/opencode/aris-farm-registro.md` (esperado: ../../../tmp/opencode/aris-farm-registro.md)
+  - docs/ESTADO-ARIS-2.0.md: `/tmp/opencode/aris-farm-registro-SEC01.md` (esperado: ../../../tmp/opencode/aris-farm-registro-SEC01.md)
+  - docs/ESTADO-ARIS-2.0.md: `/tmp/opencode/aris-checkpoint-final.md` (esperado: ../../../tmp/opencode/aris-checkpoint-final.md)
+  - docs/ESTADO-ARIS-2.0.md: `/tmp/opencode/aris-informe-final.md` (esperado: ../../../tmp/opencode/aris-informe-final.md)

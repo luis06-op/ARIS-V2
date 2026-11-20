@@ -1,0 +1,2166 @@
+diff --git a/.env.example b/.env.example
+index 70e8649..3457409 100644
+--- a/.env.example
++++ b/.env.example
+@@ -5,7 +5,7 @@
+ APP_NAME="ARIS 2.0"
+ APP_ENV=local
+ APP_KEY=
+-APP_DEBUG=true
++APP_DEBUG=false
+ APP_URL=http://localhost:8099
+ 
+ APP_LOCALE=es
+@@ -35,9 +35,11 @@ DB_PASSWORD=
+ 
+ SESSION_DRIVER=database
+ SESSION_LIFETIME=120
+-SESSION_ENCRYPT=false
++SESSION_ENCRYPT=true
+ SESSION_PATH=/
+ SESSION_DOMAIN=null
++SESSION_SECURE_COOKIE=true
++SESSION_SAME_SITE=lax
+ 
+ BROADCAST_CONNECTION=log
+ FILESYSTEM_DISK=local
+diff --git a/app/Actions/Guides/UpdateGuideVersion.php b/app/Actions/Guides/UpdateGuideVersion.php
+index 279a05f..c1498a7 100644
+--- a/app/Actions/Guides/UpdateGuideVersion.php
++++ b/app/Actions/Guides/UpdateGuideVersion.php
+@@ -6,26 +6,49 @@
+ use App\Models\ActivityVersion;
+ use App\Models\User;
+ use Illuminate\Support\Facades\DB;
++use Illuminate\Validation\ValidationException;
+ 
+ /**
+  * Una versión publicada es inmutable (INV-011): editarla crea una versión nueva. El número se
+  * calcula dentro de una transacción con bloqueo de la fila padre; el UNIQUE de la tabla es la
+  * última barrera contra dos versiones concurrentes con el mismo número.
++ *
++ * Control de concurrencia optimista: el formulario debe traer la revisión esperada
++ * (`lock_version`) y se comprueba dentro de la transacción antes de escribir. Si no coincide,
++ * el formulario está obsoleto y se rechaza para no sobrescribir cambios válidos.
+  */
+ final class UpdateGuideVersion
+ {
+     public function execute(ActivityVersion $version, array $cambios, User $autor): ActivityVersion
+     {
+-        $cambios = array_intersect_key($cambios, array_flip(['title', 'content']));
+-
+         return DB::transaction(function () use ($version, $cambios, $autor): ActivityVersion {
+             $actividad = Activity::whereKey($version->activity_id)->lockForUpdate()->firstOrFail();
+             $version = ActivityVersion::whereKey($version->id)->lockForUpdate()->firstOrFail();
++
++            // Revisión esperada enviada por el formulario. Si difiere de la actual, el formulario
++            // es obsoleto: no se acepta la escritura.
++            $revisionEsperada = $cambios['lock_version'] ?? null;
++            $cambios = array_intersect_key($cambios, array_flip(['title', 'content']));
++
++            if ($revisionEsperada !== null && $version->lock_version !== (int) $revisionEsperada) {
++                throw ValidationException::withMessages([
++                    'lock_version' => 'La guía fue modificada por otro usuario. Recarga la página antes de guardar.',
++                ]);
++            }
++
+             if ($version->status !== 'publicada') {
+-                $version->update($cambios + ['checksum' => hash('sha256', (string) ($cambios['content'] ?? $version->content))]);
++                $version->update([
++                    'title' => $cambios['title'] ?? $version->title,
++                    'content' => $cambios['content'] ?? $version->content,
++                    'checksum' => hash('sha256', (string) ($cambios['content'] ?? $version->content)),
++                    'lock_version' => $version->lock_version + 1,
++                ]);
+ 
+                 return $version->fresh();
+             }
++
++            // Versión publicada inmutable: editar genera un borrador nuevo, nunca altera la
++            // publicada ni incrementa su número.
+             $numero = (int) $actividad->versions()->max('version_number') + 1;
+             $contenido = $cambios['content'] ?? $version->content;
+ 
+@@ -38,6 +61,7 @@ public function execute(ActivityVersion $version, array $cambios, User $autor):
+                 'checksum' => hash('sha256', (string) $contenido),
+                 'status' => 'borrador',
+                 'published_at' => null,
++                'lock_version' => 1,
+             ]);
+         });
+     }
+diff --git a/app/Actions/Identity/ManageInstitutionRole.php b/app/Actions/Identity/ManageInstitutionRole.php
+index 27a9dbc..ba7faac 100644
+--- a/app/Actions/Identity/ManageInstitutionRole.php
++++ b/app/Actions/Identity/ManageInstitutionRole.php
+@@ -2,31 +2,84 @@
+ 
+ namespace App\Actions\Identity;
+ 
++use App\Domain\Identity\InstitutionalAuthority;
++use App\Models\Institution;
+ use App\Models\InstitutionMembership;
+ use App\Models\Role;
+ use App\Models\User;
+ use App\Services\Audit\RecordAuditEvent;
++use Illuminate\Auth\Access\AuthorizationException;
+ use Illuminate\Support\Facades\DB;
+-use Illuminate\Support\Facades\Gate;
+ use Illuminate\Validation\ValidationException;
+ 
+ final class ManageInstitutionRole
+ {
++    /**
++     * Roles que la institución puede asignar a una membresía.
++     *
++     * @var list<string>
++     */
++    private const ROLES_VALIDOS = ['administrador', 'evaluador', 'instructor', 'aprendiz'];
++
+     public function execute(User $actor, InstitutionMembership $membership, string $code, bool $active): void
+     {
+         DB::transaction(function () use ($actor, $membership, $code, $active): void {
++            // Bloqueo transaccional común por institución: serializa cualquier cambio de
++            // roles de la misma institución ANTES de consultar o modificar autoridad efectiva.
++            // Así dos retiros concurrentes de administradores de una misma institución no
++            // pierden la actualización del otro (MySQL 8, fila de la institución).
++            $institution = Institution::whereKey($membership->institution_id)->lockForUpdate()->firstOrFail();
++
++            // Autoridad efectiva: usuario activo, institución activa y membresía vigente,
++            // consultada en cada evaluación sin reutilizar relaciones precargadas.
++            if (! app(InstitutionalAuthority::class)->isAdministrator($actor, $institution->id)) {
++                throw new AuthorizationException('Solo el administrador vigente de la institución puede gestionar roles.');
++            }
++
+             $membership = InstitutionMembership::whereKey($membership->id)->lockForUpdate()->firstOrFail();
+-            Gate::forUser($actor)->authorize('manageRoles', $membership->institution);
+-            if (! in_array($code, ['administrador', 'evaluador', 'instructor', 'aprendiz'], true)) {
++
++            if (! in_array($code, self::ROLES_VALIDOS, true)) {
+                 throw ValidationException::withMessages(['role' => 'El rol no está aprobado por la institución.']);
+             }
++
+             $role = Role::firstOrCreate(['code' => $code], ['name' => ucfirst($code), 'is_system' => true]);
++
+             if ($active) {
+                 $membership->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $actor->id, 'assigned_at' => now()]]);
+             } else {
++                $this->protegerUltimoAdministrador($institution, $membership, $code);
+                 $membership->roles()->detach($role->id);
+             }
++
+             app(RecordAuditEvent::class)->execute($actor, $membership->institution_id, 'identity.role_changed', 'institution_membership', $membership->id, ['rol' => $code, 'activo' => $active]);
+         });
+     }
++
++    /**
++     * Rechaza la retirada cuando no quedaría ningún administrador vigente en la institución.
++     *
++     * Solo cuentan administradores efectivos: usuario activo, institución activa y membresía
++     * vigente (joined_at pasado y left_at nulo o futura). Se excluye la membresía que se está
++     * modificando para no contarse a sí misma.
++     */
++    private function protegerUltimoAdministrador(Institution $institution, InstitutionMembership $membership, string $code): void
++    {
++        if ($code !== 'administrador') {
++            return;
++        }
++
++        $quedanAdministradores = InstitutionMembership::where('institution_id', $institution->id)
++            ->where('id', '!=', $membership->id)
++            ->where('status', 'activa')
++            ->whereHas('user', fn ($query) => $query->where('status', 'activo'))
++            ->whereHas('institution', fn ($query) => $query->where('status', 'activa'))
++            ->whereDate('joined_at', '<=', today())
++            ->where(fn ($query) => $query->whereNull('left_at')->orWhereDate('left_at', '>', today()))
++            ->whereHas('roles', fn ($query) => $query->where('code', 'administrador'))
++            ->count();
++
++        if ($quedanAdministradores === 0) {
++            throw ValidationException::withMessages(['role' => 'No se puede retirar el rol de administrador: es el último administrador vigente de la institución.']);
++        }
++    }
+ }
+diff --git a/app/Http/Controllers/Audit/AuditController.php b/app/Http/Controllers/Audit/AuditController.php
+index 45f465a..ad005bb 100644
+--- a/app/Http/Controllers/Audit/AuditController.php
++++ b/app/Http/Controllers/Audit/AuditController.php
+@@ -24,10 +24,10 @@ public function __invoke(Request $request, InstitutionalAuthority $authority): V
+         Gate::authorize('viewInstitution', new AuditEvent(['institution_id' => $institutionId]));
+ 
+         $filters = $request->validate([
+-            'accion' => ['sometimes', 'string', 'max:120'],
+-            'actor_id' => ['sometimes', 'integer'],
+-            'desde' => ['sometimes', 'date_format:Y-m-d H:i'],
+-            'hasta' => ['sometimes', 'date_format:Y-m-d H:i'],
++            'accion' => ['sometimes', 'nullable', 'string', 'max:120'],
++            'actor_id' => ['sometimes', 'nullable', 'integer'],
++            'desde' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i'],
++            'hasta' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i'],
+         ]);
+         $events = AuditEvent::where('institution_id', $institutionId)
+             ->with('actor')
+diff --git a/app/Http/Controllers/Guides/GuideController.php b/app/Http/Controllers/Guides/GuideController.php
+index 07409e3..bd4f7d8 100644
+--- a/app/Http/Controllers/Guides/GuideController.php
++++ b/app/Http/Controllers/Guides/GuideController.php
+@@ -12,6 +12,8 @@
+ use Illuminate\Http\RedirectResponse;
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Gate;
++use Illuminate\Support\Facades\Session;
++use Illuminate\Validation\ValidationException;
+ use Illuminate\View\View;
+ 
+ class GuideController extends Controller
+@@ -32,9 +34,21 @@ public function show(ActivityVersion $version): View
+ 
+     public function update(GuideRequest $request, ActivityVersion $version, SaveGuideVersion $action): RedirectResponse
+     {
+-        $updated = $action->execute($request->user(), $version, $request->validated());
+-
+-        return to_route('guias.show', $updated)->with('status', 'Guía guardada. Las versiones publicadas conservan su contenido original.');
++        try {
++            $updated = $action->execute($request->user(), $version, $request->validated());
++
++            return to_route('guias.show', $updated)->with('status', 'Guía guardada. Las versiones publicadas conservan su contenido original.');
++        } catch (ValidationException $error) {
++            // Si el conflicto es de revisión (lock_version), preservar la revisión actual del
++            // servidor para que el formulario no use una revisión obsoleta en un segundo intento.
++            // El contenido enviado por el cliente se conserva mediante withInput().
++            if ($error->errors()['lock_version'] ?? null) {
++                $version->refresh();
++                Session::flash('guias.lock_version', $version->lock_version);
++            }
++
++            return back()->withErrors($error->errors())->withInput();
++        }
+     }
+ 
+     public function publish(Request $request, ActivityVersion $version, PublishAndAssignGuide $action): RedirectResponse
+diff --git a/app/Http/Controllers/Projects/ProjectController.php b/app/Http/Controllers/Projects/ProjectController.php
+index ee207fb..9afd175 100644
+--- a/app/Http/Controllers/Projects/ProjectController.php
++++ b/app/Http/Controllers/Projects/ProjectController.php
+@@ -49,29 +49,36 @@ public function show(Project $project): View
+     {
+         Gate::authorize('view', $project);
+ 
++        // Se evalúa una sola vez cada comprobación de autorización para no repetir
++        // consultas de policies en la misma vista.
++        $puedeGestionarAprendices = Gate::allows('manageLearners', $project);
++        $puedeAutorizarExcepcion = Gate::allows('authorizeUnlinkedException', $project);
++        $puedeActualizar = Gate::allows('update', $project);
++        $puedeGestionarTutores = Gate::allows('manageTutors', $project);
++
+         return view('proyectos.ver', [
+             'proyecto' => $project->load('ficha.especialidad'),
+-            'candidatosAprendices' => Gate::allows('manageLearners', $project)
++            'candidatosAprendices' => $puedeGestionarAprendices
+                 ? User::whereHas('institutionMemberships', fn ($query) => $query->where('institution_id', $project->institution_id)
+                     ->whereHas('roles', fn ($roles) => $roles->where('code', 'aprendiz')))
+                     ->orWhereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'aprendiz'))
+                     ->orderBy('name')->get() : collect(),
+-            'aprendices' => Gate::allows('authorizeUnlinkedException', $project)
++            'aprendices' => $puedeAutorizarExcepcion
+                 ? User::whereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'aprendiz')
+                     ->whereDate('assigned_at', '<=', today())->where(fn ($dates) => $dates->whereNull('ended_at')->orWhereDate('ended_at', '>', today())))->get() : collect(),
+             'entregas' => Submission::where('project_id', $project->id)
+-                ->when(! Gate::allows('authorizeUnlinkedException', $project), fn ($query) => $query->where('author_id', auth()->id()))
++                ->when(! $puedeAutorizarExcepcion, fn ($query) => $query->where('author_id', auth()->id()))
+                 ->with(['versions' => fn ($query) => $query->orderByDesc('version_number')])->orderByDesc('id')->get(),
+             'asignaciones' => ActivityAssignment::where('project_id', $project->id)->where('status', 'activa')
+                 ->where('target_type', 'proyecto')->where('target_ref', (string) $project->id)->where('assigned_at', '<=', now())
+                 ->whereHas('activityVersion', fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at'))
+                 ->with('activityVersion')->get(),
+             'guias' => ActivityVersion::whereHas('activity', fn ($query) => $query->where('project_id', $project->id))
+-                ->when(! Gate::allows('update', $project), fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at')
++                ->when(! $puedeActualizar, fn ($query) => $query->where('status', 'publicada')->whereNotNull('published_at')
+                     ->whereHas('assignments', fn ($assignment) => $assignment->where('project_id', $project->id)
+                         ->where('target_type', 'proyecto')->where('target_ref', (string) $project->id)->where('status', 'activa')->where('assigned_at', '<=', now())))
+                 ->orderByDesc('id')->get(),
+-            'instructores' => Gate::allows('manageTutors', $project)
++            'instructores' => $puedeGestionarTutores
+                 ? User::whereHas('institutionMemberships', fn ($query) => $query->where('institution_id', $project->institution_id)
+                     ->whereHas('roles', fn ($roles) => $roles->where('code', 'instructor')))
+                     ->orWhereHas('projectMemberships', fn ($query) => $query->where('project_id', $project->id)->where('function', 'instructor'))
+diff --git a/app/Http/Controllers/Submissions/SearchController.php b/app/Http/Controllers/Submissions/SearchController.php
+index d062202..790d3b3 100644
+--- a/app/Http/Controllers/Submissions/SearchController.php
++++ b/app/Http/Controllers/Submissions/SearchController.php
+@@ -14,11 +14,11 @@ class SearchController extends Controller
+     public function __invoke(Request $request, SearchSubmissions $search, VisibleProjects $projects): View
+     {
+         $filters = $request->validate([
+-            'q' => ['sometimes', 'string', 'max:120'],
+-            'estado' => ['sometimes', 'string', 'in:borrador,entregada,en_revision,ajustes_solicitados,revisada,retirada'],
+-            'ficha_id' => ['sometimes', 'integer', 'exists:fichas,id'],
+-            'desde' => ['sometimes', 'date_format:Y-m-d'],
+-            'hasta' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:desde'],
++            'q' => ['sometimes', 'nullable', 'string', 'max:120'],
++            'estado' => ['sometimes', 'nullable', 'string', 'in:borrador,entregada,en_revision,ajustes_solicitados,revisada,retirada'],
++            'ficha_id' => ['sometimes', 'nullable', 'integer', 'exists:fichas,id'],
++            'desde' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
++            'hasta' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
+         ]);
+ 
+         $fichas = Ficha::whereIn('id', $projects->forUser($request->user())
+diff --git a/app/Http/Requests/Guides/GuideRequest.php b/app/Http/Requests/Guides/GuideRequest.php
+index f6d2989..e9f1468 100644
+--- a/app/Http/Requests/Guides/GuideRequest.php
++++ b/app/Http/Requests/Guides/GuideRequest.php
+@@ -14,6 +14,7 @@ public function authorize(): bool
+     public function rules(): array
+     {
+         return [
++            'lock_version' => ['sometimes', 'nullable', 'integer'],
+             'code' => [$this->route('version') ? 'sometimes' : 'required', 'string', 'max:40'],
+             'title' => ['required', 'string', 'max:180'],
+             'content' => ['required', 'string', 'max:50000'],
+diff --git a/app/Models/ActivityVersion.php b/app/Models/ActivityVersion.php
+index 1d098e2..687b2e3 100644
+--- a/app/Models/ActivityVersion.php
++++ b/app/Models/ActivityVersion.php
+@@ -9,7 +9,7 @@
+ class ActivityVersion extends Model
+ {
+     protected $fillable = [
+-        'activity_id', 'version_number', 'title', 'content', 'author_id', 'checksum',
++        'activity_id', 'version_number', 'lock_version', 'title', 'content', 'author_id', 'checksum',
+         'status', 'published_at',
+     ];
+ 
+diff --git a/app/Models/Submission.php b/app/Models/Submission.php
+index 79150d3..285174c 100644
+--- a/app/Models/Submission.php
++++ b/app/Models/Submission.php
+@@ -5,6 +5,7 @@
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\Relations\BelongsTo;
+ use Illuminate\Database\Eloquent\Relations\HasMany;
++use Illuminate\Database\Eloquent\Relations\HasOne;
+ 
+ class Submission extends Model
+ {
+@@ -33,6 +34,12 @@ public function versions(): HasMany
+         return $this->hasMany(SubmissionVersion::class);
+     }
+ 
++    /** Última versión por número, para listados que solo muestran la más reciente. */
++    public function latestVersion(): HasOne
++    {
++        return $this->hasOne(SubmissionVersion::class, 'submission_id')->latest('version_number');
++    }
++
+     public function documents(): HasMany
+     {
+         return $this->hasMany(Document::class);
+diff --git a/app/Queries/SearchSubmissions.php b/app/Queries/SearchSubmissions.php
+index ab0ac6a..9fb911f 100644
+--- a/app/Queries/SearchSubmissions.php
++++ b/app/Queries/SearchSubmissions.php
+@@ -2,10 +2,18 @@
+ 
+ namespace App\Queries;
+ 
++use App\Domain\Identity\InstitutionalAuthority;
++use App\Models\ProjectMembership;
+ use App\Models\Submission;
+ use App\Models\User;
+ use Illuminate\Database\Eloquent\Builder;
+ 
++/**
++ * Busca entregas aplicando el mismo alcance autorizado que SubmissionVersionPolicy::view:
++ * el autor ve sus propias entregas solo si mantiene acceso vigente al proyecto, y el
++ * personal institucional (administrador, instructor, evaluador con jurisdicción vigente)
++ * ve las entregas de sus proyectos.
++ */
+ final class SearchSubmissions
+ {
+     public function __construct(private VisibleProjects $projects) {}
+@@ -13,11 +21,46 @@ public function __construct(private VisibleProjects $projects) {}
+     /** @param array{q?: string, estado?: string, ficha_id?: int|string|null, desde?: string|null, hasta?: string|null} $filters */
+     public function forUser(User $user, array $filters): Builder
+     {
+-        $allowed = $this->projects->forUser($user)->select('projects.id');
++        // Proyectos sobre los que el usuario ejerce autoridad efectiva como personal
++        // institucional (administrador, instructor o evaluador con jurisdicción vigente).
++        $staffProjects = app(VisibleProjects::class)->forUser($user, staffOnly: true)
++            ->whereNotNull('projects.id')->select('projects.id');
++
++        // Proyectos donde el usuario es aprendiz con membresía vigente (alcance de 'submit').
++        // Se reutiliza InstitutionalAuthority::memberships() como fuente de verdad para la
++        // membresía institucional del rol aprendiz (usuario/institución activos y fechas vigentes),
++        // igual que ProjectPolicy::submit(). La asignación al proyecto aporta su propia vigencia
++        // (assigned_at/ended_at) y el proyecto/institución activos.
++        $institucionesAprendiz = app(InstitutionalAuthority::class)
++            ->memberships($user, 'aprendiz')
++            ->select('institution_id');
++
++        $learnerProjects = ProjectMembership::query()
++            ->where('user_id', $user->getKey())
++            ->where('function', 'aprendiz')
++            ->whereDate('assigned_at', '<=', today())
++            ->where(fn ($query) => $query->whereNull('ended_at')->orWhereDate('ended_at', '>', today()))
++            ->whereHas('project', fn ($query) => $query
++                ->where('status', 'activo')
++                ->whereIn('institution_id', $institucionesAprendiz))
++            ->whereNotNull('project_id')
++            ->select('project_id');
+ 
+         return Submission::query()
+-            ->whereIn('project_id', $allowed)
+-            ->with(['project.ficha.especialidad', 'versions' => fn ($query) => $query->orderByDesc('version_number')])
++            ->where(function (Builder $query) use ($user, $staffProjects, $learnerProjects): void {
++                // El autor ve sus propias entregas solo si mantiene acceso vigente al proyecto.
++                $query->where(function (Builder $autor) use ($user, $learnerProjects): void {
++                    $autor->where('author_id', $user->getKey())
++                        ->whereIn('project_id', $learnerProjects);
++                })
++                // El personal institucional ve las entregas de sus proyectos.
++                    ->orWhereIn('project_id', $staffProjects);
++            })
++            // Solo se necesita la última versión y el total para el listado: se evita cargar
++            // el historial completo de cada entrega (OPT REV-PERF). La búsqueda por resumen
++            // y nombres de archivo usa subconsultas SQL, no depende del eager loading.
++            ->with(['project.ficha.especialidad', 'latestVersion'])
++            ->withCount('versions')
+             ->when(($filters['estado'] ?? '') !== '', fn ($query) => $query->where('status', $filters['estado']))
+             ->when(($filters['ficha_id'] ?? '') !== '', fn ($query) => $query->whereHas('project', fn ($project) => $project->where('ficha_id', $filters['ficha_id'])))
+             ->when(($filters['desde'] ?? '') !== '', fn ($query) => $query->whereDate('created_at', '>=', $filters['desde']))
+diff --git a/app/Services/Storage/EvidenceValidator.php b/app/Services/Storage/EvidenceValidator.php
+index dfc5554..eb2f16a 100644
+--- a/app/Services/Storage/EvidenceValidator.php
++++ b/app/Services/Storage/EvidenceValidator.php
+@@ -8,6 +8,11 @@
+ /**
+  * Valida evidencias por contenido, nunca por la cabecera enviada por el cliente (ADR-003).
+  * Los límites son los conservadores de docs/architecture/ALMACENAMIENTO-PRIVADO.md (PI-010).
++ *
++ * Para DOCX y XLSX la firma ZIP (PK\x03\x04) es necesaria pero NO suficiente: se valida la
++ * estructura OOXML de manera acotada (partes obligatorias, tipos de contenido y relaciones)
++ * sin extraer el paquete indiscriminadamente, protegiéndose de bombas de descompresión y
++ * de paquetes ZIP genéricos con extensión cruzada.
+  */
+ final class EvidenceValidator
+ {
+@@ -42,7 +47,7 @@ public function validate(UploadedFile $archivo): array
+         }
+ 
+         if (! $this->firmaValida($ruta, $extension)) {
+-            throw new InvalidEvidence('El archivo no tiene la firma esperada de su formato.');
++            throw new InvalidEvidence('El archivo no tiene la firma y estructura esperadas de su formato.');
+         }
+ 
+         return [
+@@ -64,16 +69,198 @@ public function sanitizarNombre(string $nombre): string
+         return mb_substr($nombre === '' ? 'archivo' : $nombre, 0, 255);
+     }
+ 
+-    private function firmaValida(string $ruta, string $extension): bool
++    private function iniciaCon(string $ruta, string $prefijo): bool
+     {
+-        $cabecera = (string) file_get_contents($ruta, false, null, 0, 8);
++        $gestor = fopen($ruta, 'rb');
++        if ($gestor === false) {
++            return false;
++        }
++        $cabecera = fread($gestor, strlen($prefijo));
++        fclose($gestor);
++
++        return $cabecera === $prefijo;
++    }
+ 
++    private function firmaValida(string $ruta, string $extension): bool
++    {
+         return match ($extension) {
+-            'pdf' => str_starts_with($cabecera, '%PDF-'),
+-            'docx', 'xlsx' => str_starts_with($cabecera, "PK\x03\x04"),
+-            'jpg', 'jpeg' => str_starts_with($cabecera, "\xFF\xD8\xFF"),
+-            'png' => str_starts_with($cabecera, "\x89PNG\r\n\x1A\n"),
++            'pdf' => $this->iniciaCon($ruta, '%PDF-'),
++            'docx', 'xlsx' => $this->esZipValido($ruta) && $this->estructuraOoxmlValida($ruta, $extension),
++            'jpg', 'jpeg' => $this->iniciaCon($ruta, "\xFF\xD8\xFF"),
++            'png' => $this->iniciaCon($ruta, "\x89PNG\r\n\x1A\n"),
+             default => false,
+         };
+     }
++
++    private function esZipValido(string $ruta): bool
++    {
++        if (! $this->iniciaCon($ruta, "PK\x03\x04")) {
++            return false;
++        }
++
++        $zip = new \ZipArchive;
++        if ($zip->open($ruta) !== true) {
++            return false;
++        }
++        $zip->close();
++
++        return true;
++    }
++
++    /**
++     * Valida la estructura OOXML de un paquete DOCX o XLSX sin extraerlo a disco.
++     *
++     * Requisitos: partes obligatorias ([Content_Types].xml, _rels/.rels y la parte
++     * principal del documento), tipo de contenido coherente con la extensión y relación
++     * de empaquetado que apunte a la parte principal. Límites defensivos contra paquetes
++     * con muchas entradas o descompresión desbordada.
++     */
++    private function estructuraOoxmlValida(string $ruta, string $extension): bool
++    {
++        $zip = new \ZipArchive;
++        if ($zip->open($ruta) !== true) {
++            return false;
++        }
++
++        try {
++            $totalEntradas = $zip->numFiles;
++            $totalDescomprimido = 0;
++            $partesNecesarias = $this->partesObligatorias($extension);
++            $partesEncontradas = [];
++
++            for ($i = 0; $i < $totalEntradas; $i++) {
++                $estadistica = $zip->statIndex($i);
++                if ($estadistica === false) {
++                    return false;
++                }
++
++                // Límites defensivos: evitar bombas de descompresión y paquetes desmesurados.
++                $totalDescomprimido += (int) $estadistica['size'];
++                if ($totalDescomprimido > 60 * 1024 * 1024) {
++                    return false; // límite total de contenido descomprimido
++                }
++                if ((int) $estadistica['size'] > 20 * 1024 * 1024) {
++                    return false; // una sola entrada no puede ser tan grande
++                }
++
++                $nombre = (string) $estadistica['name'];
++                if (in_array($nombre, $partesNecesarias, true)) {
++                    $partesEncontradas[] = $nombre;
++                }
++            }
++
++            if ($totalEntradas > 3000) {
++                return false; // demasiadas entradas para una evidencia de oficina
++            }
++
++            foreach ($partesNecesarias as $parte) {
++                if (! in_array($parte, $partesEncontradas, true)) {
++                    return false; // falta una parte obligatoria del paquete OOXML
++                }
++            }
++
++            // Tipo de contenido de la parte principal, coherente con la extensión.
++            if (! $this->tipoContenidoPrincipalCoherente($zip, $extension)) {
++                return false;
++            }
++
++            // Relación de empaquetado que apunte a la parte principal del documento.
++            if (! $this->relacionApuntaADocumentoPrincipal($zip, $extension)) {
++                return false;
++            }
++
++            return true;
++        } finally {
++            $zip->close();
++        }
++    }
++
++    /**
++     * @return list<string>
++     */
++    private function partesObligatorias(string $extension): array
++    {
++        $comunes = ['[Content_Types].xml', '_rels/.rels'];
++
++        return $extension === 'xlsx'
++            ? array_merge($comunes, ['xl/workbook.xml'])
++            : array_merge($comunes, ['word/document.xml']);
++    }
++
++    private function tipoContenidoPrincipalCoherente(\ZipArchive $zip, string $extension): bool
++    {
++        $contenido = $zip->getFromName('[Content_Types].xml');
++        if ($contenido === false || $contenido === '') {
++            return false;
++        }
++
++        $xml = $this->cargarXmlSeguro($contenido);
++        if ($xml === null) {
++            return false; // XML mal formado: se rechaza la evidencia
++        }
++
++        $partePrincipal = $extension === 'xlsx' ? '/xl/workbook.xml' : '/word/document.xml';
++        $espera = $extension === 'xlsx'
++            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'
++            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml';
++
++        foreach ($xml->Override as $override) {
++            $parte = (string) $override['PartName'];
++            $tipo = (string) $override['ContentType'];
++            if ($parte === $partePrincipal && $tipo === $espera) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    private function relacionApuntaADocumentoPrincipal(\ZipArchive $zip, string $extension): bool
++    {
++        $contenido = $zip->getFromName('_rels/.rels');
++        if ($contenido === false || $contenido === '') {
++            return false;
++        }
++
++        $xml = $this->cargarXmlSeguro($contenido);
++        if ($xml === null) {
++            return false; // XML mal formado: se rechaza la evidencia
++        }
++
++        $objetivo = $extension === 'xlsx' ? 'xl/workbook.xml' : 'word/document.xml';
++        $tipoEsperado = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument';
++
++        foreach ($xml->Relationship as $relacion) {
++            $tipo = (string) $relacion['Type'];
++            $target = (string) $relacion['Target'];
++            $targetMode = (string) $relacion['TargetMode'];
++            // Solo la relación principal de documento, con tipo exacto y destino interno
++            // (TargetMode ausente o "Internal"). Se rechazan relaciones externas.
++            if ($target === $objetivo && $tipo === $tipoEsperado
++                && ($targetMode === '' || $targetMode === 'Internal')
++            ) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++
++    /**
++     * Carga un string XML de forma segura, sin permitir que advertencias de libxml
++     * se conviertan en ErrorException de Laravel. Devuelve null si el XML es inválido.
++     */
++    private function cargarXmlSeguro(string $xml): ?\SimpleXMLElement
++    {
++        $anterior = libxml_use_internal_errors(true);
++        try {
++            $resultado = simplexml_load_string($xml);
++            libxml_clear_errors();
++
++            // simplexml_load_string devuelve false en error; el tipo de retorno exige null.
++            return $resultado === false ? null : $resultado;
++        } finally {
++            libxml_use_internal_errors($anterior);
++        }
++    }
+ }
+diff --git a/composer.json b/composer.json
+index 9b8fbd5..73483e3 100644
+--- a/composer.json
++++ b/composer.json
+@@ -7,6 +7,7 @@
+     "license": "MIT",
+     "require": {
+         "php": "^8.3",
++        "ext-zip": "*",
+         "laravel/framework": "^13.17",
+         "laravel/tinker": "^3.0"
+     },
+diff --git a/composer.lock b/composer.lock
+index 0255ca5..7bbae88 100644
+--- a/composer.lock
++++ b/composer.lock
+@@ -4,7 +4,7 @@
+         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+         "This file is @generated automatically"
+     ],
+-    "content-hash": "cda2add6397422fb1a2eb5b9207f1575",
++    "content-hash": "f5f6feea350f5a9b78a5140d7321dd3f",
+     "packages": [
+         {
+             "name": "brick/math",
+@@ -8570,7 +8570,8 @@
+     "prefer-stable": true,
+     "prefer-lowest": false,
+     "platform": {
+-        "php": "^8.3"
++        "php": "^8.3",
++        "ext-zip": "*"
+     },
+     "platform-dev": {},
+     "plugin-api-version": "2.11.0"
+diff --git a/docs/ESTADO-ARIS-2.0.md b/docs/ESTADO-ARIS-2.0.md
+index 0e293fb..c20ea9f 100644
+--- a/docs/ESTADO-ARIS-2.0.md
++++ b/docs/ESTADO-ARIS-2.0.md
+@@ -777,3 +777,192 @@ ## 12. Sesión 2026-11-18 — Despliegue local y cuentas sintéticas de prueba
+ 
+ **Siguiente objetivo:** resolver `PI-002` antes de convertir estos roles de prueba en autoridad
+ institucional y exponer `Policies`/`Gates` con rutas reales.
++
++---
++
++## 25. Sesión 2026-11-19 — ARIS AI ENGINEERING FARM: Oleada 1 y reauditoría Fase B
++
++**Fase / objetivo:** Constitución de la granja de agentes, Oleada 1 (auditoría y estabilización), reauditoría de correcciones P1/P2 tras hallazgos del revisor Codex (6 hallazgos: 2 alta, 4 media).
++
++**Agentes realmente invocados en esta sesión:**
++- OpenCode (orquestador/CTO) — todas las implementaciones y coordinación
++- Codex CLI (`codex exec`) — revisor independiente: 6 hallazgos (2 P1 alta, 4 P2 media)
++- Hermes Agent (`hermes -z`) — revisor de seguridad (timeout, se relanzará vía subagente security-reviewer)
++- Subagentes OpenCode (Oleada 1, en paralelo): security-reviewer, tdd-guide, general, database-reviewer
++
++**Nuevas correcciones tras hallazgos de Codex (Fase B):**
++
++- **B.1 Autorización unificada de entregas:** `app/Queries/SearchSubmissions.php` reescrito para que el autor vea sus propias entregas SOLO si mantiene membresía vigente como aprendiz en el proyecto (ProjectMembership con `assigned_at` vigente y `ended_at` nulo o futuro). Comparte criterio con `SubmissionVersionPolicy::view`.
++- **B.1 DocumentVersionPolicy:** verificada como coherente: verifica `document->status === 'activo'`, `submission_id` presente, coincidencia de documento/entrega/proyecto/institución, y `Gate::allows('view', $link->submissionVersion)`.
++- **B.2 Último administrador:** `app/Actions/Identity/ManageInstitutionRole.php` — el conteo de administradores restantes ahora filtra por `status = 'activa'` en la membresía, alineado con `InstitutionalAuthority`.
++- **B.3 Concurrencia optimista guías:** `resources/views/guias/ver.blade.php` incluye `<input type="hidden" name="lock_version">`. `app/Http/Controllers/Guides/GuideController.php` captura `ValidationException` de lock_version, refresca la versión del servidor y guarda `Session::flash('guias.lock_version', ...)` para que el formulario no use una revisión obsoleta. `app/Http/Requests/Guides/GuideRequest.php`: `lock_version` opcional (`sometimes, nullable, integer`) para no romper flujos existentes; `UpdateGuideVersion.php` valida estrictamente cuando se envía.
++- **B.4 Evidencias OOXML:** `app/Services/Storage/EvidenceValidator.php` — nuevo método `cargarXmlSeguro()` que usa `libxml_use_internal_errors()` para evitar 500 por XML mal formado. Validación de tipo completo de `ContentType` (no `str_contains`) y relación interna con tipo `officeDocument` (sin `/externalRelationship/`). `config/aris.php`: `application/zip` restaurado como identificación preliminar para docx/xlsx, pero siempre seguido de validación estructural OOXML estricta. `composer.json`: añadido `ext-zip: *`. `composer.lock` sincronizado vía `composer update --lock`.
++- **B.6 Filtros opcionales:** `tests/Feature/Submissions/SearchOptionalFiltersTest.php` y `tests/Feature/Audit/AuditOptionalFiltersTest.php` reescritos para enviar query string real mediante `http_build_query()` en lugar de pasar filtros como cabecera.
++
++**Pruebas ejecutadas:** `php artisan test` → **163 pruebas, 163 aprobadas, 848 aserciones**. `vendor/bin/pint --test` → aprobada. `composer validate --strict` → válido. `composer check-platform-reqs` → todo success. `git diff --check` → limpio. Enlaces de documentación: 50 archivos, 71 enlaces, 0 rotos.
++
++**Subagentes Oleada 1 (en ejecución al cierre):**
++- security-reviewer: revisión independiente de seguridad P1/P2 (pendiente de resultado)
++- tdd-guide: verificación de pruebas y añadido de regresiones para hallazgos de Codex (pendiente de resultado)
++- general (OPS-01): recuperación de npm, Vite, Playwright (pendiente de resultado)
++- database-reviewer (DB-02): preparación MySQL 8 (pendiente de resultado)
++
++**Bloqueos reales:**
++- MySQL 8: no hay servidor activo (B3). No se puede validar concurrencia real ni migraciones en MySQL.
++- Playwright: no operativo (`npx playwright` falló previamente). No se pueden ejecutar pruebas E2E ni de navegador.
++- UI/UX (Fase 3): Antigravity es app GUI Electron, no CLI operativo. No hay capacidades visuales autónomas disponibles.
++
++**Siguiente objetivo:** Esperar resultados de los subagentes de la Oleada 1, integrar observaciones, y proceder a Oleada 2 (correcciones y optimización).
++
++---
++
++## 26. Sesión 2026-11-19 — ARIS AI ENGINEERING FARM: resultados de la Oleada 1 y correcciones cruzadas
++
++**Fase / objetivo:** Ejecución real de la granja multiagente (objetivo 30 agentes, máx. 8 simultáneos, modo intensivo), integración de revisiones independientes y corrección de todos los hallazgos confirmados.
++
++**Agentes realmente invocados:**
++- `codex exec` (Codex CLI 0.171.0): revisión técnica independiente — 6 hallazgos (2 P1, 4 P2).
++- `security-reviewer` (subagente OpenCode, departamento SEC-01): auditoría de seguridad — 1 P0, 2 P1, 1 P2, 1 OPT.
++- `database-reviewer` (subagente OpenCode, DB-02): investigación MySQL 8.
++- `general` (subagente OpenCode, OPS-01): recuperación de npm/Vite/Playwright.
++- `tdd-guide` (subagente OpenCode, QA-01): añadió 6 pruebas de regresión antes de agotar cuota (`Free usage limit reached`).
++- OpenCode (CTO): integración y correcciones finales.
++
++**Resultados por agente:**
++- **SEC-01:** P0 `.env` inseguro (APP_DEBUG=true, SESSION_ENCRYPT=false, SESSION_SECURE_COOKIE ausente); P1 `SearchSubmissions` sin vigencia en path autor; P1 inconsistencia con `SubmissionVersionPolicy`; P2 último admin; OPT `Session::flash` redundante.
++- **Codex:** P1 búsqueda retenía acceso tras revocar autorización; P1 último administrador efectivo (membresía inactiva); P2 formulario renovaba revisión obsoleta; P2 XML mal formado → 500; P2 declaraciones OOXML incoherentes; P2 pruebas de filtros no enviaban query string.
++- **DB-02:** MySQL 8 **NO disponible** (solo MariaDB 11.8.8 y 10.4/XAMPP). No se inició ninguna base. Vía segura: contenedor Docker/Podman con imagen oficial MySQL 8 (requiere autorización). B3 permanece **BLOQUEADO**.
++- **OPS-01:** `npm ci` y `npm run build` **FUNCIONALES**; Playwright v1.65.1 instalado pero **sin Chromium local** (requiere autorización para instalar navegador).
++
++**Correcciones aplicadas (todas verificadas):**
++- P0: `.env` alineado con `.env.example` (APP_DEBUG=false, SESSION_ENCRYPT=true, SESSION_SECURE_COOKIE=true, SESSION_SAME_SITE=lax).
++- P1: `SearchSubmissions` path autor con vigencia real — `assigned_at`/`ended_at` (project_memberships **no tiene columna status**), usuario activo, proyecto activo, institución activa. Se corrigió el hallazgo del revisor que asumía una columna inexistente.
++- P1: `ManageInstitutionRole` conteo con `status='activa'` en membresía.
++- P2: `GuideController` usa `$error->errors()` (método, no propiedad).
++- P2: `EvidenceValidator::cargarXmlSeguro` retorna `null` si `simplexml_load_string` devuelve `false`.
++- P2: `EvidenceValidator` valida tipo completo de ContentType y relación officeDocument interna; captura errores libxml.
++- P2: pruebas de filtros envían query string real (`http_build_query`).
++- Corrección de regresión: fixtures de `SearchPrivacyTest` y `ComplementaryFeaturesTest` con proyecto `status='activa'` (escenario vigente, no debilita validación).
++
++**Pruebas ejecutadas:** `php artisan test` → **169 pruebas, 169 aprobadas, 860 aserciones** (6 regresiones nuevas añadidas por QA-01 antes de agotar cuota). `vendor/bin/pint --test` → aprobado. `git diff --check` → limpio. `composer validate --strict` → válido.
++
++**Registro de la granja:** `/tmp/opencode/aris-farm-registro.md` y `/tmp/opencode/aris-farm-registro-SEC01.md` (fuera del código de producción). El informe de seguridad se movió fuera del repositorio para evitar informes redundantes versionados.
++
++**Bloqueos reales:**
++- Cuota de subagentes OpenCode agotada (`Free usage limit reached`) — impide mantener 8 instancias simultáneas reales. La estructura objetivo de 30 agentes queda registrada, pero no se simula actividad.
++- MySQL 8 no disponible (B3 bloqueado) — requiere autorización para contenedor Docker/Podman.
++- Chromium de Playwright no instalado — requiere autorización.
++- Antigravity es app GUI, no CLI operativo; sin capacidades visuales autónomas.
++
++**Siguiente objetivo:** Oleada 2 (correcciones y optimización) y Oleada 3 (rediseño UI/UX) con los recursos disponibles; Oleada 4 (certificación) queda condicionada a desbloqueos de cuota, MySQL 8 y navegador.
++
++**Inventario definitivo de herramientas verificado (fin de sesión):**
++| Herramienta | Versión | Estado |
++|---|---|---|
++| Codex CLI | 0.171.0 | Usado (revisión independiente) |
++| Hermes Agent | v0.22.5 (2026.9.24) | Usado vía subagente SEC-01 |
++| Kilo Code CLI | 7.8.18 | Instalado, no invocado |
++| Gemini CLI | 0.68.0 | Instalado, no invocado |
++| Claude Code | 2.1.197 | Instalado, no invocado |
++| GitHub Copilot CLI | 1.0.109 | Instalado, no invocado |
++| Antigravity | v2.28.2 | App GUI Electron, no CLI operativo |
++| MCP AgentRing | — | No disponible |
++
++Claude Code y Copilot no se invocaron para no exceder cuotas ni duplicar las revisiones
++ya realizadas por Codex y Hermes.
++
++---
++
++## 27. Sesión 2026-11-20 — AUTONOMOUS ENGINEERING MODE: certificación local y cierre ordenado
++
++**Objetivo:** ejecución desatendida de las fases restantes, verificación real de frontend y navegador, optimización, checkpoints, limpieza y cierre ordenado.
++
++**Capacidades recuperadas:**
++- `npm ci` → 60 paquetes, 0 vulnerabilidades (antes reportado sin evidencia).
++- `npm run build` → Vite 8.3.8, exit 0, CSS 40,53 kB + JS 4,32 kB + fuentes Instrument Sans.
++- Chromium headless shell 159 vía `npx playwright install chromium` (fuente oficial, sin sudo).
++- `npm run test:browser` → **APROBADO**: 14 auditorías axe (4 roles × 3 resoluciones + 2 estados), **0 violaciones**, 14 capturas en `/tmp/opencode/aris-browser-2EfI1t/`. Flujos E2E verificados: login por rol, teclado/salto al contenido, arrastrar y soltar evidencia, envío congelado, revisión cualitativa, reapertura con modal y foco.
++
++**Optimización Fase F:** `ProjectController::show` evalúa una sola vez cada `Gate::allows` (antes duplicado), sin alterar autorización.
++
++**Revisión visual:** capturas desktop 1440 px y móvil 390 px inspeccionadas: interfaz coherente, estados vacíos reales, navegación adaptable, sin desbordamiento.
++
++**Pruebas finales:** `php artisan test` → 169/169, 860 aserciones. Pint aprobado. `composer validate --strict` válido. `git diff --check` limpio. Enlaces 73/0 rotos.
++
++**Entregables persistentes:**
++- `/tmp/opencode/aris-consolidated.patch` (1882 líneas)
++- `/tmp/opencode/aris-checkpoint-final.md`
++- `/tmp/opencode/aris-informe-final.md`
++- `/tmp/opencode/aris-browser-2EfI1t/` (capturas + resultados.json)
++
++**Apagado NO ejecutado:** se detectaron 9 inhibidores de apagado (Brave Browser guardando estado, orca-ide, PowerDevil, ModemManager, NetworkManager, servicios del sistema), sesión activa de usuario y riesgo de pérdida de trabajo ajeno. La directiva exige conservar el equipo encendido y registrar la causa. El password sudo no fue almacenado ni utilizado.
++
++**Estado técnico final: PARCIAL** — implementación y verificación local completas; certificación total bloqueada por MySQL 8, cuota de agentes y apagado con inhibidores. Sin commit, push ni despliegue.
++
++---
++
++## 28. Sesión 2026-11-20 — Cierre de B3 (MySQL 8) y modo Orca orchestration
++
++**Objetivo:** certificar MySQL 8 aislado y activar el modo orquestación real de Orca solicitado por el responsable.
++
++**B3 CERRADA — MySQL 8.4.13 real:**
++- Instancia efímera vía **Podman rootless** (sin sudo), imagen oficial `docker.io/library/mysql:8.4`, `--network none`, `--skip-networking`, `--mysqlx=OFF`, socket y datadir en directorio temporal 0700.
++- Se usó `--skip-log-bin` porque MySQL 8 con binlog activo exige `SUPER` para crear triggers (error 1419). No debilita la aplicación.
++- El socket se montó en la **misma ruta** dentro y fuera del contenedor para satisfacer la validación estricta de `scripts/probar-mysql.php`.
++- Identidad verificada: `VERSION()=8.4.13`, sin "MariaDB", socket coincidente, base `aris_test_certificacion`.
++- Resultado: **169 pruebas, 169 aprobadas, 860 aserciones** en MySQL 8 — idéntico a SQLite.
++
++**Defecto de compatibilidad MySQL 8 detectado y corregido:** `projects.status` es enum `['borrador','activo','archivado']`; los fixtures y `SearchSubmissions` usaban `'activa'` (válido en SQLite, pero MySQL trunca con error 1265). Corregido a `'activo'` en `SearchSubmissions`, `SearchPrivacyTest` y `ComplementaryFeaturesTest`. Los `status='activa'` de `ActivityAssignment`/`Institution` son correctos y se conservaron.
++
++**Modo Orca Orchestration activado:**
++- Runtime Orca listo (`runtimeState: ready`). Run `run_8d5df44d5914` creado con objetivo de revisión independiente post-B3.
++- Repo ARIS-V2 registrado en Orca (`id: e32fe49d-d0ef-4180-9b06-e5f091c55266`).
++- Tareas `task_3b4386539f77` (REV-SEC) y `task_5c43b3561fce` (REV-PERF) creadas.
++- Worker Codex real lanzado en worktree aislado (`new-child`) para REV-SEC; concurrencia limitada.
++- AgentRing: relay operativo, 1 teléfono emparejado. **No se realizaron llamadas de voz** (no autorizadas).
++
++**Bloqueos restantes:** cuota de subagentes OpenCode agotada; apagado con 9 inhibidores y sesión activa (no ejecutado); sin commit/push/despliegue.
++
++**Resultado real de Orca Orchestration:**
++- REV-SEC (`task_3b4386539f77`): worker Codex en worktree `aris-rev-sec` **FALLÓ** en `agent_readiness` por timeout; terminal liberado y tarea marcada `failed`. Reasignada a `codex exec` directo.
++- REV-PERF (`task_5c43b3561fce`): worker en `starting/unknown`; también reasignada a `codex exec` directo.
++- Conclusión: la infraestructura de orquestación de Orca es real y operativa (Run, tareas, dispatch, workers, liberación), pero el arranque de agentes TUI en worktrees no alcanzó `ready` en este entorno. No se simuló su trabajo; se reasignó a ejecución CLI real.
++
++**Limpieza:** contenedor MySQL efímero `aris-mysql-cert` detenido tras la certificación. Respaldos/evidencias conservados; directorios de datadir efímero con permisos del UID mapeado no se eliminaron (requeriría sudo; no se usó el password).
++
++**Resultados de las revisiones reasignadas (`codex exec`, exit 0):**
++- **REV-SEC (4 hallazgos):** Alta — `SearchSubmissions` omitía la membresía institucional vigente con rol aprendiz (corregido: reutiliza `InstitutionalAuthority::memberships($user,'aprendiz')` como fuente de verdad, alineado con `ProjectPolicy::submit()`); Media — `VisibleProjects` no filtra `projects.status` en rama staff (documentado, coherente con denegación por defecto); Media — relación OOXML aceptaba cualquier tipo con prefijo y `TargetMode` externo (corregido: tipo exacto `.../officeDocument` y solo `Internal`); Baja — `libxml_use_internal_errors` sin restaurar (corregido: `finally`). Controles confirmados: ManageInstitutionRole, GuideController `errors()`, `.env`, OOXML.
++- **REV-PERF (3 hallazgos media):** carga de todas las versiones cuando solo se usa la última y el conteo; listado de proyectos sin paginar; prueba de rendimiento no mide carga/renderizado. Recomendaciones documentadas como OPT pendientes (no se implementaron para evitar cambios de esquema/vista sin evidencia de mejora). No hay N+1 directo confirmado.
++
++**Correcciones aplicadas tras REV-SEC:** `SearchSubmissions` reutiliza `InstitutionalAuthority` para el rol aprendiz; `EvidenceValidator` exige tipo de relación exacto e interno y restaura libxml; fixture OOXML corregido al tipo real `.../officeDocument`.
++
++**Verificación final:** SQLite 169/169, 860 aserciones · **MySQL 8.4.13 169/169, 860 aserciones** · Pint aprobado · `composer validate --strict` válido · `git diff --check` limpio.
++
++**Estado técnico final: PARCIAL** — certificación local completa (SQLite + MySQL 8 + navegador), revisiones independientes integradas. Pendiente: OPT de rendimiento documentados, cuota de agentes, y desbloqueos externos (Hostinger). Sin commit, push ni despliegue.
++
++---
++
++## 29. Sesión 2026-11-20 — Native Multi-Agent Orchestration Mode
++
++**Cambio de estrategia:** se canceló el concepto de "granja" (infraestructura propia). Se activó la orquestación nativa de herramientas ya instaladas. Registro verificable en `docs/evidencias/2026-11-20/ORQUESTACION.md`.
++
++**Descubrimiento exhaustivo:** 13 herramientas de IA instaladas. Agentes realmente invocados: OpenCode (orquestador), Codex CLI (`codex exec`: REV-SEC/REV-PERF), Kilo Code CLI (`kilo run`: REV-PERF/REV-UI/REV-CRUZADA), Orca Orchestration (Run + workers, fallidos), Claude Code y Gemini CLI (invocados para REV-UI; timeout y HTTP 503 respectivamente). Cursor, Kiro, Copilot y opencode2: instalados/autenticados pero no invocados (sin tarea que aporte valor no duplicado). AgentRing operativo pero sin llamadas de voz (no autorizadas).
++
++**Resultado de agentes:**
++- Orca: workers Codex fallaron en `agent_readiness` (2 timeouts + error de flags en `current`); tareas marcadas `failed` con causa, trabajo reasignado a CLI directa. Sin simulación.
++- Codex: REV-SEC (4 hallazgos) y REV-PERF (3 OPT), ya integrados en sección 28.
++- Kilo REV-PERF: confirmó 3 OPT y propuso `latestVersion` + `withCount` + paginación.
++- Kilo REV-UI: 17 problemas con propuestas por archivo, WCAG 2.2 AA e iconografía SVG.
++- Claude/Gemini REV-UI: bloqueados (timeout / 503); reasignados a Kilo.
++
++**Misiones ejecutadas:**
++- **A (Preservación):** entregables movidos de `/tmp` a `docs/evidencias/2026-11-20/` (persistente). Parche consolidado 1962 líneas, MANIFEST-SHA256 de 35 archivos, resultados de pruebas y capturas.
++- **B (UI/UX):** iconos SVG unificados en nav; `aria-label` en avatar; `truncate` en email; jerarquía `h2` en resultados y eventos; CTA secundario a `aris-btn-fantasma`; `scope="col"` + `<caption>` en tabla de auditoría; contraste de placeholder y subrayado persistente de enlaces.
++- **C (Rendimiento):** relación `latestVersion` (HasOne) + `withCount('versions')` en `SearchSubmissions`; vista usa `latestVersion`/`versions_count`; prueba mide carga (≤6 consultas) y acceso (0 consultas).
++- **D (Frontend):** `npm ci`, `npm run build` (exit 0), Playwright 14 auditorías axe, **0 violaciones**, 14 capturas; Chromium reinstalado desde fuente oficial.
++- **E (Validación):** SQLite **169/169, 893 aserciones**; MySQL 8.4.13 **169/169, 893 aserciones**; Pint, Composer validate --strict, diff --check, enlaces 73/0 rotos.
++- **G (Revisión cruzada):** Kilo revisando cambios de B/C (en curso al cierre).
++
++**Resultado final:** `php artisan test` 169/169, 893 aserciones · MySQL 8 169/169, 893 · Pint aprobado · Playwright axe 0 violaciones · Vite OK · diff --check limpio.
++
++**Estado técnico: PARCIAL** — ingeniería local completa y verificada; pendiente: cierre de revisión cruzada, OPT adicionales, Hostinger. Sin commit, push ni despliegue.
+diff --git a/resources/css/app.css b/resources/css/app.css
+index 8188fc7..45068a2 100644
+--- a/resources/css/app.css
++++ b/resources/css/app.css
+@@ -212,7 +212,7 @@ @layer components {
+     }
+ 
+     .aris-campo::placeholder {
+-        color: #6d8599;
++        color: #8ba5bd;
+     }
+ 
+     .aris-campo:hover {
+@@ -250,15 +250,16 @@ @layer components {
+     /* --- Enlaces --- */
+     .aris-enlace {
+         color: var(--color-cian-claro);
+-        text-decoration: none;
++        text-decoration: underline;
++        text-underline-offset: 3px;
++        text-decoration-thickness: 1px;
+         font-weight: 600;
+         transition: opacity 140ms ease;
+     }
+ 
+     .aris-enlace:hover {
+         opacity: 0.82;
+-        text-decoration: underline;
+-        text-underline-offset: 3px;
++        text-decoration-thickness: 2px;
+     }
+ 
+     .aris-enlace-suave {
+@@ -380,7 +381,7 @@ html[data-a11y-size='muy-grande'] {
+ }
+ 
+ /* Enlaces siempre subrayados. */
+-html[data-a11y-links='subrayado'] a:not(.aris-btn) {
++html[data-a11y-links='subrayado'] a:not(.aris-btn):not(.aris-nav-enlace) {
+     text-decoration: underline;
+     text-underline-offset: 3px;
+ }
+diff --git a/resources/views/auditoria/indice.blade.php b/resources/views/auditoria/indice.blade.php
+index 1e70ab5..b2a324c 100644
+--- a/resources/views/auditoria/indice.blade.php
++++ b/resources/views/auditoria/indice.blade.php
+@@ -46,10 +46,11 @@
+         </section>
+ 
+         <section class="aris-tarjeta-plana p-6">
+-            <h3 class="font-semibold">Eventos ({{ $eventos->total() }})</h3>
++            <h2 class="font-semibold">Eventos ({{ $eventos->total() }})</h2>
+             <div class="mt-4 overflow-x-auto">
+                 <table class="w-full min-w-[640px] text-left text-sm">
+-                    <thead class="text-tenue"><tr><th class="p-2">Fecha</th><th class="p-2">Acción</th><th class="p-2">Actor</th><th class="p-2">Recurso</th><th class="p-2">Detalle</th></tr></thead>
++                    <caption class="sr-only">Eventos de auditoría de la institución, ordenados por fecha.</caption>
++                    <thead class="text-tenue"><tr><th scope="col" class="p-2">Fecha</th><th scope="col" class="p-2">Acción</th><th scope="col" class="p-2">Actor</th><th scope="col" class="p-2">Recurso</th><th scope="col" class="p-2">Detalle</th></tr></thead>
+                     <tbody class="divide-y divide-white/5">
+                         @forelse ($eventos as $evento)
+                             <tr>
+diff --git a/resources/views/entregas/buscar.blade.php b/resources/views/entregas/buscar.blade.php
+index e0ca363..7665462 100644
+--- a/resources/views/entregas/buscar.blade.php
++++ b/resources/views/entregas/buscar.blade.php
+@@ -47,15 +47,19 @@
+         </section>
+ 
+         <section class="aris-tarjeta-plana p-6">
+-            <h3 class="font-semibold">Resultados ({{ $resultados->total() }})</h3>
++            <h2 class="font-semibold">Resultados ({{ $resultados->total() }})</h2>
+             <ul class="mt-4 divide-y divide-white/5">
+                 @forelse ($resultados as $entrega)
+                     <li class="py-3">
+-                        <a class="aris-enlace" href="{{ route('entregas.show', $entrega->versions()->orderByDesc('version_number')->firstOrFail()) }}">{{ $entrega->title }}</a>
++                    @if ($entrega->latestVersion)
++                        <a class="aris-enlace" href="{{ route('entregas.show', $entrega->latestVersion) }}">{{ $entrega->title }}</a>
++                    @else
++                        <span class="font-semibold">{{ $entrega->title }}</span>
++                    @endif
+                         <p class="mt-1 text-sm text-tenue">
+                             {{ $entrega->project->title }} · {{ $entrega->status }} ·
+                             {{ $entrega->project->ficha?->numero ?? 'Sin ficha' }} ·
+-                            {{ $entrega->versions()->count() }} versión(es)
++                            {{ $entrega->versions_count }} versión(es)
+                         </p>
+                     </li>
+                 @empty
+diff --git a/resources/views/guias/ver.blade.php b/resources/views/guias/ver.blade.php
+index 305eb41..a2b8824 100644
+--- a/resources/views/guias/ver.blade.php
++++ b/resources/views/guias/ver.blade.php
+@@ -18,6 +18,7 @@
+                 <form method="POST" action="{{ route('guias.update', $version) }}" class="mt-4 space-y-4">
+                     @csrf
+                     @method('PATCH')
++                    <input type="hidden" name="lock_version" value="{{ $version->lock_version }}">
+                     <label class="aris-etiqueta" for="title">Título</label><input class="aris-campo" id="title" name="title" value="{{ old('title', $version->title) }}" maxlength="180" required>
+                     <label class="aris-etiqueta" for="content">Contenido</label><textarea class="aris-campo" id="content" name="content" rows="10" maxlength="50000" required>{{ old('content', $version->content) }}</textarea>
+                     <button class="aris-btn aris-btn-verde" type="submit">Guardar guía</button>
+diff --git a/resources/views/layouts/app.blade.php b/resources/views/layouts/app.blade.php
+index 6ffb700..d6315dd 100644
+--- a/resources/views/layouts/app.blade.php
++++ b/resources/views/layouts/app.blade.php
+@@ -37,11 +37,36 @@
+                             Mi cuenta
+                         </a>
+ 
+-                        <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>Proyectos</a>
+-                        <a href="{{ route('entregas.buscar') }}" class="aris-nav-enlace" @if (request()->routeIs('entregas.buscar')) aria-current="page" @endif>Buscar entregas</a>
+-                        <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>Control de accesos</a>
++                        <a href="{{ route('proyectos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('proyectos.*')) aria-current="page" @endif>
++                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++                                <rect x="3" y="4" width="18" height="16" rx="2" />
++                                <path d="M3 10h18M9 4v16" />
++                            </svg>
++                            Proyectos
++                        </a>
++                        <a href="{{ route('entregas.buscar') }}" class="aris-nav-enlace" @if (request()->routeIs('entregas.buscar')) aria-current="page" @endif>
++                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++                                <circle cx="11" cy="11" r="7" />
++                                <path d="m20 20-3.5-3.5" />
++                            </svg>
++                            Buscar entregas
++                        </a>
++                        <a href="{{ route('accesos.index') }}" class="aris-nav-enlace" @if (request()->routeIs('accesos.*')) aria-current="page" @endif>
++                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++                                <circle cx="9" cy="8" r="3.2" />
++                                <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
++                                <path d="M17 10.5h5M19.5 8v5" />
++                            </svg>
++                            Control de accesos
++                        </a>
+                         @can('viewAny', App\Models\AuditEvent::class)
+-                            <a href="{{ route('auditoria.index') }}" class="aris-nav-enlace" @if (request()->routeIs('auditoria.*')) aria-current="page" @endif>Auditoría</a>
++                            <a href="{{ route('auditoria.index') }}" class="aris-nav-enlace" @if (request()->routeIs('auditoria.*')) aria-current="page" @endif>
++                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
++                                    <path d="M6 3h9l4 4v14H6z" />
++                                    <path d="M14 3v5h5M9 13h6M9 17h6" />
++                                </svg>
++                                Auditoría
++                            </a>
+                         @endcan
+ 
+                         <form method="POST" action="{{ route('sesion.destroy') }}" class="md:mt-auto">
+@@ -69,8 +94,8 @@
+                     </div>
+ 
+                     <div class="flex items-center gap-3 text-sm text-tenue">
+-                        <span class="hidden sm:inline">{{ auth()->user()->email }}</span>
+-                        <span class="flex h-9 w-9 items-center justify-center rounded-full border border-verde/30 bg-verde/10 text-xs font-bold text-verde" aria-hidden="true">
++                        <span class="hidden max-w-48 truncate sm:inline" title="{{ auth()->user()->email }}">{{ auth()->user()->email }}</span>
++                        <span class="flex h-9 w-9 items-center justify-center rounded-full border border-verde/30 bg-verde/10 text-xs font-bold text-verde" aria-label="Iniciales de {{ auth()->user()->name }}">
+                             {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 2)) }}
+                         </span>
+                     </div>
+diff --git a/resources/views/publico/inicio.blade.php b/resources/views/publico/inicio.blade.php
+index 0981f15..ee2ec90 100644
+--- a/resources/views/publico/inicio.blade.php
++++ b/resources/views/publico/inicio.blade.php
+@@ -23,7 +23,7 @@
+                 <a href="{{ route('registro.create') }}" class="aris-btn aris-btn-verde px-6 py-3">
+                     Crear una cuenta
+                 </a>
+-                <a href="#proyectos" class="aris-btn aris-btn-cian px-6 py-3">
++                <a href="#proyectos" class="aris-btn aris-btn-fantasma px-6 py-3">
+                     Explorar proyectos
+                 </a>
+             </div>
+diff --git a/tests/Feature/ComplementaryFeaturesTest.php b/tests/Feature/ComplementaryFeaturesTest.php
+index f616f07..47e29e8 100644
+--- a/tests/Feature/ComplementaryFeaturesTest.php
++++ b/tests/Feature/ComplementaryFeaturesTest.php
+@@ -36,6 +36,7 @@ private function setupWorkflow(): array
+         $student = $this->member($institution, 'aprendiz');
+         $ficha = $this->ficha($institution);
+         $project = $this->project($ficha, $admin);
++        $project->update(['status' => 'activo']);
+         app(ManageProjectTutor::class)->execute($admin, $project, $instructor, true);
+         ProjectMembership::create(['project_id' => $project->id, 'user_id' => $student->id, 'function' => 'aprendiz', 'assigned_at' => today()]);
+         $activity = ActivityVersion::create([
+diff --git a/tests/Feature/Database/JurisdictionIntegrityTest.php b/tests/Feature/Database/JurisdictionIntegrityTest.php
+index 9a91e14..cbd5830 100644
+--- a/tests/Feature/Database/JurisdictionIntegrityTest.php
++++ b/tests/Feature/Database/JurisdictionIntegrityTest.php
+@@ -39,7 +39,9 @@ public function test_ficha_cannot_be_deleted_when_linked_to_project(): void
+     public function test_new_migrations_rollback_and_reapply_in_isolated_database(): void
+     {
+         try {
+-            $this->artisan('migrate:rollback', ['--step' => count(glob(database_path('migrations/2026_11_18_*.php'))), '--force' => true])->assertSuccessful();
++            // Se revierte todo el lote de migraciones (incluida la nueva de lock_version) para
++            // comprobar que el esquema puede deshacerse y volver a aplicarse limpiamente.
++            $this->artisan('migrate:rollback', ['--force' => true])->assertSuccessful();
+             $this->assertFalse(Schema::hasColumn('submissions', 'fecha_limite_entrega'));
+             $this->assertFalse(Schema::hasColumn('projects', 'ficha_id'));
+             $this->assertFalse(Schema::hasTable('especialidades'));
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 0000000..de7d86b
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,89 @@
++name: CI — ARIS 2.0
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++    branches: [main]
++
++jobs:
++  php-tests:
++    runs-on: ubuntu-latest
++    strategy:
++      fail-fast: false
++      matrix:
++        php: [8.4]
++        db: [sqlite, mysql]
++
++    services:
++      mysql:
++        if: matrix.db == 'mysql'
++        image: mysql:8.4
++        env:
++          MYSQL_ROOT_PASSWORD: password
++          MYSQL_DATABASE: aris_test_ci
++          MYSQL_USER: aris_ci
++          MYSQL_PASSWORD: password
++        ports:
++          - 3306:3306
++        options: >-
++          --health-cmd="mysqladmin ping -h localhost"
++          --health-interval=10s
++          --health-timeout=5s
++          --health-retries=5
++
++    steps:
++      - name: Checkout código
++        uses: actions/checkout@v4
++
++      - name: Instalar PHP ${{ matrix.php }} y extensiones
++        uses: shivammathur/setup-php@v2
++        with:
++          php-version: ${{ matrix.php }}
++          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite3, pdo_mysql, gd, fileinfo, openssl, intl
++          coverage: none
++
++      - name: Instalar Composer y dependencias (desde lockfile)
++        run: |
++          composer install --no-interaction --prefer-dist --optimize-autoloader
++
++      - name: Instalar Node y dependencias frontend (desde lockfile)
++        uses: actions/setup-node@v4
++        with:
++          node-version: '20'
++          cache: 'npm'
++          cache-dependency-path: '**/package-lock.json'
++        # Se ejecuta en un paso separado para no fallar si el registro no responde
++
++      - name: Compilar assets (Vite)
++        run: npm ci --ignore-scripts && npm run build
++
++      - name: Crear .env de prueba
++        run: |
++          cp .env.example .env
++          php artisan key:generate --ansi
++          if [ "${{ matrix.db }}" = "mysql" ]; then
++            sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
++            sed -i 's/DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/' .env
++            sed -i 's/DB_PORT=3306/DB_PORT=3306/' .env
++            sed -i 's/DB_DATABASE=aris_v2_db/DB_DATABASE=aris_test_ci/' .env
++            sed -i 's/DB_USERNAME=/DB_USERNAME=aris_ci/' .env
++            sed -i 's/DB_PASSWORD=/DB_PASSWORD=password/' .env
++          fi
++
++      - name: Ejecutar migraciones
++        run: php artisan migrate --force
++
++      - name: Ejecutar Pint (estilo PHP)
++        run: composer exec pint --test
++
++      - name: Ejecutar suite de pruebas (PHPUnit)
++        run: php artisan test
++
++      - name: Validar documentación (enlaces y rutas)
++        run: node scripts/verificar-enlaces-docs.mjs
++
++      - name: Verificar que no haya secretos versionados
++        run: |
++          if git ls-files | grep -E '^\.env(\.|$)' ; then exit 1; fi
++          if git ls-files | grep -E 'storage/app/private' ; then exit 1; fi
+
+diff --git a/database/migrations/2026_11_19_000001_add_lock_version_to_activity_versions.php b/database/migrations/2026_11_19_000001_add_lock_version_to_activity_versions.php
+index 0000000..2da0730
+--- /dev/null
++++ b/database/migrations/2026_11_19_000001_add_lock_version_to_activity_versions.php
+@@ -0,0 +1,22 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('activity_versions', function (Blueprint $table): void {
++            $table->unsignedInteger('lock_version')->default(1)->after('version_number');
++        });
++    }
++
++    public function down(): void
++    {
++        Schema::table('activity_versions', function (Blueprint $table): void {
++            $table->dropColumn('lock_version');
++        });
++    }
++};
+
+diff --git a/docs/decisions/ADR-018-correcciones-p1-p2-fase-1.md b/docs/decisions/ADR-018-correcciones-p1-p2-fase-1.md
+index 0000000..5240d3c
+--- /dev/null
++++ b/docs/decisions/ADR-018-correcciones-p1-p2-fase-1.md
+@@ -0,0 +1,35 @@
++# ADR-018 — Correcciones obligatorias P1 y P2 (Fase 1)
++
++- **Fecha:** 2026-11-19
++- **Estado:** aceptada
++- **Marco institucional:** PI-002 (versión 4), PI-001 (versión 2), PI-010 (pendiente, límites conservadores)
++
++## Contexto
++
++La auditoría anterior (commit `2913b8cd`) reportó seis pruebas que reproducían cinco defectos funcionales (P1 y P2) que debían corregirse con prioridad sobre cualquier mejora cosmética:
++
++1. **P1.1 Privacidad de entregas:** el buscador mostraba entregas de cualquier proyecto al que el usuario tuviera acceso, sin distinguir autor vs. personal institucional.
++2. **P1.2 Protección del último administrador:** `ManageInstitutionRole` no impedía retirar al único administrador vigente ni usaba `InstitutionalAuthority` como criterio de autoridad efectiva.
++3. **P2.1 Filtros opcionales:** `SearchController` y `AuditController` rechazaban campos opcionales vacíos enviados por formularios HTML reales.
++4. **P2.2 Archivos DOCX y XLSX:** `EvidenceValidator` confiaba solo en la firma ZIP (`PK\x03\x04`), insuficiente para rechazar ZIP genéricos con extensión cruzada.
++5. **P2.3 Edición concurrente de guías:** `UpdateGuideVersion` no implementaba control de concurrencia optimista con revisión esperada.
++6. **P2.4 Rendimiento del buscador:** la vista ejecutaba consultas N+1 sobre versiones y conteos.
++
++## Decisión
++
++1. **P1.1:** `SearchSubmissions::forUser` filtra entregas por `author_id` (el autor ve sus propias entregas) o por proyectos donde el usuario ejerce autoridad efectiva como personal institucional (administrador, instructor o evaluador con jurisdicción vigente). El criterio se comparte con `SubmissionVersionPolicy::view`.
++2. **P1.2:** `ManageInstitutionRole` adquiere un bloqueo transaccional por institución (`Institution::lockForUpdate`) antes de consultar o modificar roles, usa `InstitutionalAuthority` como criterio de autoridad efectiva (usuario activo, institución activa, membresía vigente), y rechaza la retirada del último administrador vigente.
++3. **P2.1:** Se añade `nullable` a todos los campos opcionales de validación en `SearchController` y `AuditController`, sin debilitar la validación de valores no vacíos ni los controles de autorización.
++4. **P2.2:** `EvidenceValidator` valida la estructura OOXML de DOCX/XLSX (partes obligatorias `[Content_Types].xml`, `_rels/.rels`, parte principal del documento; tipo de contenido coherente; relación de empaquetado) sin extraer indiscriminadamente, con límites defensivos (≤3000 entradas, ≤60 MB descomprimido, ≤20 MB por entrada). Se elimina `application/zip` de los MIME permitidos para docx/xlsx en `config/aris.php`.
++5. **P2.3:** Migración incremental `2026_11_19_000001_add_lock_version_to_activity_versions` añade `lock_version` a `activity_versions`. `UpdateGuideVersion` comprueba la revisión esperada dentro de la transacción; un formulario obsoleto es rechazado. Una versión publicada sigue siendo inmutable: editarla genera un borrador nuevo.
++6. **P2.4:** La vista de búsqueda accede a la colección de versiones ya cargada con eager loading (`$entrega->versions`) en lugar de ejecutar consultas por fila.
++
++## Consecuencias
++
++- Positivas: privacidad de entregas reforzada, protección del último administrador, formularios HTML resilientes, validación estructural de archivos de oficina, control de concurrencia optimista y eliminación de N+1 en el buscador.
++- Negativas: mayor complejidad en `EvidenceValidator` (justificada por seguridad de archivos); una migración adicional en el esquema.
++- No se introdujeron nuevas políticas institucionales; todas las correcciones se basan en políticas ya aprobadas (PI-001, PI-002, PI-010 límites conservadores).
++
++## Pruebas
++
++Se añadieron 7 archivos de prueba de regresión (SearchPrivacyTest, ManageInstitutionRoleTest, SearchOptionalFiltersTest, AuditOptionalFiltersTest, EvidenceValidatorOoxmlTest, GuideVersionConcurrencyTest, SearchPerformanceTest) y se ajustó JurisdictionIntegrityTest por la nueva migración. Suite completa: 163 pruebas, 848 aserciones, todas aprobadas. Pint y lint PHP aprobados.
+
+diff --git a/tests/Feature/Audit/AuditOptionalFiltersTest.php b/tests/Feature/Audit/AuditOptionalFiltersTest.php
+index 0000000..3f3fdf7
+--- /dev/null
++++ b/tests/Feature/Audit/AuditOptionalFiltersTest.php
+@@ -0,0 +1,36 @@
++<?php
++
++namespace Tests\Feature\Audit;
++
++use App\Models\Institution;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\Support\AcademicScenario;
++use Tests\TestCase;
++
++/**
++ * P2.1: el visor de auditoría debe aceptar campos opcionales vacíos sin debilitar la
++ * validación de los valores que sí se envían.
++ */
++class AuditOptionalFiltersTest extends TestCase
++{
++    use AcademicScenario, RefreshDatabase;
++
++    private function urlConFiltros(array $filtros): string
++    {
++        return '/auditoria?'.http_build_query($filtros);
++    }
++
++    public function test_filtros_opcionales_vacios_son_aceptados(): void
++    {
++        $institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $admin = $this->member($institution, 'administrador');
++
++        $this->actingAs($admin)->get($this->urlConFiltros([
++            'accion' => '', 'actor_id' => '', 'desde' => '', 'hasta' => '',
++        ]))->assertOk();
++
++        $this->actingAs($admin)->get($this->urlConFiltros(['accion' => '']))->assertOk();
++        $this->actingAs($admin)->get($this->urlConFiltros(['actor_id' => '']))->assertOk();
++        $this->actingAs($admin)->get($this->urlConFiltros(['desde' => '', 'hasta' => '']))->assertOk();
++    }
++}
+
+diff --git a/tests/Feature/Guides/GuideVersionConcurrencyTest.php b/tests/Feature/Guides/GuideVersionConcurrencyTest.php
+index 0000000..1f8b73f
+--- /dev/null
++++ b/tests/Feature/Guides/GuideVersionConcurrencyTest.php
+@@ -0,0 +1,177 @@
++<?php
++
++namespace Tests\Feature\Guides;
++
++use App\Actions\Guides\SaveGuideVersion;
++use App\Actions\Guides\UpdateGuideVersion;
++use App\Models\Activity;
++use App\Models\ActivityVersion;
++use App\Models\Institution;
++use App\Models\InstitutionMembership;
++use App\Models\Project;
++use App\Models\Role;
++use App\Models\User;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Validation\ValidationException;
++use Tests\TestCase;
++
++/**
++ * P2.3: control de concurrencia optimista en la edición de guías. La revisión esperada
++ * (lock_version) se comprueba dentro de la transacción; un formulario obsoleto no sobrescribe
++ * cambios válidos. Una versión publicada sigue siendo inmutable: editarla genera un borrador
++ * nuevo sin alterar la original.
++ */
++class GuideVersionConcurrencyTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private User $autor;
++
++    private ActivityVersion $version;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++
++        $this->institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $this->autor = User::factory()->create();
++        // El autor es administrador de la institución para pasar la política de actualización de guías.
++        $membresiaAutor = InstitutionMembership::create([
++            'institution_id' => $this->institution->id,
++            'user_id' => $this->autor->id,
++            'joined_at' => today(),
++            'status' => 'activa',
++        ]);
++        $membresiaAutor->roles()->attach(Role::firstOrCreate(['code' => 'administrador'], ['name' => 'Administrador']));
++        $this->project = Project::create([
++            'institution_id' => $this->institution->id,
++            'code' => 'ACT-1',
++            'slug' => 'act-1',
++            'title' => 'Proyecto',
++            'owner_id' => $this->autor->id,
++        ]);
++        $actividad = Activity::create([
++            'project_id' => $this->project->id,
++            'code' => 'ACT',
++            'title' => 'Actividad',
++            'created_by' => $this->autor->id,
++        ]);
++        $this->version = ActivityVersion::create([
++            'activity_id' => $actividad->id,
++            'version_number' => 1,
++            'title' => 'Título original',
++            'content' => 'Contenido original',
++            'author_id' => $this->autor->id,
++            'checksum' => hash('sha256', 'Contenido original'),
++            'status' => 'borrador',
++        ]);
++    }
++
++    public function test_editar_borrador_con_revision_coincidente_actualiza_e_incrementa(): void
++    {
++        $resultado = (new UpdateGuideVersion)->execute($this->version, [
++            'lock_version' => $this->version->lock_version,
++            'title' => 'Título corregido',
++            'content' => 'Contenido corregido',
++        ], $this->autor);
++
++        $this->assertSame('Título corregido', $resultado->title);
++        $this->assertSame('Contenido corregido', $resultado->content);
++        $this->assertSame(2, $resultado->lock_version);
++        $this->assertSame(hash('sha256', 'Contenido corregido'), $resultado->fresh()->checksum);
++    }
++
++    public function test_formulario_obsoleto_no_sobrescribe_cambios_validos(): void
++    {
++        // Primera edición válida incrementa la revisión a 2.
++        (new UpdateGuideVersion)->execute($this->version, [
++            'lock_version' => $this->version->lock_version,
++            'content' => 'Primera edición',
++        ], $this->autor);
++
++        // Un segundo formulario que aún trae la revisión 1 está obsoleto.
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('modificada por otro usuario');
++
++        (new UpdateGuideVersion)->execute($this->version, [
++            'lock_version' => 1,
++            'content' => 'Edición obsoleta que debe rechazarse',
++        ], $this->autor);
++
++        $this->assertSame('Primera edición', $this->version->fresh()->content);
++    }
++
++    public function test_editar_version_publicada_crea_borrador_nuevo_y_no_altera_la_publicada(): void
++    {
++        $publicada = ActivityVersion::create([
++            'activity_id' => $this->version->activity_id,
++            'version_number' => 2,
++            'title' => 'Publicada',
++            'content' => 'Contenido publicado',
++            'author_id' => $this->autor->id,
++            'checksum' => hash('sha256', 'Contenido publicado'),
++            'status' => 'publicada',
++            'published_at' => now(),
++            'lock_version' => 1,
++        ]);
++
++        $nueva = (new UpdateGuideVersion)->execute($publicada, [
++            'lock_version' => $publicada->lock_version,
++            'title' => 'Título corregido',
++            'content' => 'Contenido corregido',
++        ], $this->autor);
++
++        $this->assertNotSame($publicada->id, $nueva->id);
++        $this->assertSame(3, $nueva->version_number);
++        $this->assertSame('borrador', $nueva->status);
++        $this->assertSame(1, $nueva->lock_version);
++        // La publicada permanece intacta.
++        $this->assertSame('publicada', $publicada->fresh()->status);
++        $this->assertSame('Contenido publicado', $publicada->fresh()->content);
++    }
++
++    public function test_save_guide_version_con_lock_version_obsoleto_es_rechazado(): void
++    {
++        // Primera edición válida incrementa la revisión.
++        (new SaveGuideVersion)->execute($this->autor, $this->version, [
++            'lock_version' => $this->version->lock_version,
++            'title' => 'Título original',
++            'content' => 'Primera edición válida',
++        ]);
++
++        // Segundo intento con lock_version obsoleto (1) debe rechazarse.
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('modificada por otro usuario');
++
++        (new SaveGuideVersion)->execute($this->autor, $this->version, [
++            'lock_version' => 1,
++            'title' => 'Título',
++            'content' => 'Edición obsoleta que debe rechazarse',
++        ]);
++
++        $this->assertSame('Primera edición válida', $this->version->fresh()->content);
++    }
++
++    public function test_despues_de_conflicto_lock_version_formulario_muestra_revision_actual_del_servidor(): void
++    {
++        $this->actingAs($this->autor);
++
++        // Primera edición válida: lock_version pasa de 1 a 2.
++        $this->patch(route('guias.update', $this->version), [
++            'lock_version' => $this->version->lock_version,
++            'title' => 'Título original',
++            'content' => 'Primera edición válida',
++        ])->assertRedirect();
++
++        // Segundo intento con lock_version obsoleto (1): conflicto de revisión.
++        $respuesta = $this->patch(route('guias.update', $this->version), [
++            'lock_version' => 1,
++            'title' => 'Título obsoleto',
++            'content' => 'Contenido obsoleto',
++        ]);
++
++        $respuesta->assertSessionHasErrors('lock_version');
++        // El formulario debe flash la revisión actual del servidor (2).
++        $this->assertSame(2, session('guias.lock_version'));
++    }
++}
+
+diff --git a/tests/Feature/Identity/ManageInstitutionRoleTest.php b/tests/Feature/Identity/ManageInstitutionRoleTest.php
+index 0000000..81d954d
+--- /dev/null
++++ b/tests/Feature/Identity/ManageInstitutionRoleTest.php
+@@ -0,0 +1,145 @@
++<?php
++
++namespace Tests\Feature\Identity;
++
++use App\Actions\Identity\ManageInstitutionRole;
++use App\Models\Institution;
++use App\Models\InstitutionMembership;
++use App\Models\Role;
++use App\Models\User;
++use Illuminate\Auth\Access\AuthorizationException;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Validation\ValidationException;
++use Tests\Support\AcademicScenario;
++use Tests\TestCase;
++
++/**
++ * P1.2: no se puede retirar el último administrador vigente de una institución. La comprobación
++ * adquiere un bloqueo transaccional por institución y usa InstitutionalAuthority como criterio
++ * de autoridad efectiva (usuario, institución y membresía vigentes).
++ */
++class ManageInstitutionRoleTest extends TestCase
++{
++    use AcademicScenario, RefreshDatabase;
++
++    private Institution $institution;
++
++    private User $admin;
++
++    private InstitutionMembership $adminMembership;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++
++        $this->institution = Institution::create(['name' => 'Institución de prueba', 'status' => 'activa']);
++        $this->admin = $this->member($this->institution, 'administrador');
++        $this->adminMembership = $this->admin->institutionMemberships()->firstOrFail();
++    }
++
++    private function administrador(User $user, array $overrides = []): InstitutionMembership
++    {
++        $membership = InstitutionMembership::create(array_merge([
++            'institution_id' => $this->institution->id,
++            'user_id' => $user->id,
++            'joined_at' => today(),
++        ], $overrides));
++        $membership->roles()->attach(Role::firstOrCreate(['code' => 'administrador'], ['name' => 'Administrador']));
++
++        return $membership;
++    }
++
++    public function test_rechaza_retirar_el_unico_administrador_vigente(): void
++    {
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('último administrador vigente');
++
++        (new ManageInstitutionRole)->execute($this->admin, $this->adminMembership, 'administrador', false);
++    }
++
++    public function test_permite_retirar_un_administrador_si_queda_otro_vigente(): void
++    {
++        $otro = User::factory()->create();
++        $membresiaOtro = InstitutionMembership::create([
++            'institution_id' => $this->institution->id,
++            'user_id' => $otro->id,
++            'joined_at' => today(),
++        ]);
++        $membresiaOtro->roles()->attach(Role::firstOrCreate(['code' => 'administrador'], ['name' => 'Administrador']));
++
++        // No debe lanzar: al actor (administrador) le queda al menos otro administrador vigente.
++        (new ManageInstitutionRole)->execute($this->admin, $membresiaOtro, 'administrador', false);
++
++        $this->assertDatabaseMissing('membership_roles', [
++            'institution_membership_id' => $membresiaOtro->id,
++            'role_id' => Role::where('code', 'administrador')->firstOrFail()->id,
++        ]);
++    }
++
++    public function test_no_cuentan_administradores_inactivos(): void
++    {
++        $inactivo = User::factory()->create(['status' => 'inactivo']);
++        $this->administrador($inactivo);
++
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('último administrador vigente');
++
++        // El actor es el único administrador efectivo; el inactivo no cuenta.
++        (new ManageInstitutionRole)->execute($this->admin, $this->adminMembership, 'administrador', false);
++    }
++
++    public function test_no_cuentan_membresias_vencidas(): void
++    {
++        $vencido = User::factory()->create();
++        $this->administrador($vencido, ['left_at' => today()->subDay()]);
++
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('último administrador vigente');
++
++        (new ManageInstitutionRole)->execute($this->admin, $this->adminMembership, 'administrador', false);
++    }
++
++    public function test_aislamiento_entre_instituciones(): void
++    {
++        $otra = Institution::create(['name' => 'Otra institución', 'status' => 'activa']);
++        $otroAdmin = $this->member($otra, 'administrador');
++        $otraMembresia = $otroAdmin->institutionMemberships()->firstOrFail();
++
++        $this->expectException(AuthorizationException::class);
++        // El actor no es administrador de la otra institución.
++        (new ManageInstitutionRole)->execute($this->admin, $otraMembresia, 'administrador', false);
++    }
++
++    public function test_retirar_un_rol_que_no_es_administrador_no_desencadena_proteccion(): void
++    {
++        $evaluador = $this->member($this->institution, 'aprendiz');
++        $membresia = $evaluador->institutionMemberships()->firstOrFail();
++        $membresia->roles()->attach(Role::firstOrCreate(['code' => 'evaluador'], ['name' => 'Evaluador']));
++
++        // Puede quitarse el rol de evaluador sin afectar al único administrador.
++        (new ManageInstitutionRole)->execute($this->admin, $membresia, 'evaluador', false);
++
++        $this->assertDatabaseMissing('membership_roles', [
++            'institution_membership_id' => $membresia->id,
++            'role_id' => Role::where('code', 'evaluador')->firstOrFail()->id,
++        ]);
++    }
++
++    public function test_no_cuentan_administrador_con_membresia_inactiva(): void
++    {
++        $otroAdmin = User::factory()->create();
++        $membresiaOtro = InstitutionMembership::create([
++            'institution_id' => $this->institution->id,
++            'user_id' => $otroAdmin->id,
++            'joined_at' => today(),
++            'status' => 'inactiva',
++        ]);
++        $membresiaOtro->roles()->attach(Role::firstOrCreate(['code' => 'administrador'], ['name' => 'Administrador']));
++
++        $this->expectException(ValidationException::class);
++        $this->expectExceptionMessage('último administrador vigente');
++
++        // El actor es el único administrador efectivo; el otro tiene membresía inactiva.
++        (new ManageInstitutionRole)->execute($this->admin, $this->adminMembership, 'administrador', false);
++    }
++}
+
+diff --git a/tests/Feature/Storage/EvidenceValidatorOoxmlTest.php b/tests/Feature/Storage/EvidenceValidatorOoxmlTest.php
+index 0000000..aaff4c6
+--- /dev/null
++++ b/tests/Feature/Storage/EvidenceValidatorOoxmlTest.php
+@@ -0,0 +1,184 @@
++<?php
++
++namespace Tests\Feature\Storage;
++
++use App\Exceptions\InvalidEvidence;
++use App\Services\Storage\EvidenceValidator;
++use Illuminate\Http\UploadedFile;
++use Tests\TestCase;
++
++/**
++ * P2.2: la firma ZIP no es suficiente para DOCX/XLSX. Se valida la estructura OOXML
++ * (partes obligatorias, tipo de contenido y relaciones) sin extraer indiscriminadamente,
++ * rechazando ZIP genéricos, extensiones cruzadas, archivos corruptos y paquetes que
++ * excedan límites defensivos.
++ */
++class EvidenceValidatorOoxmlTest extends TestCase
++{
++    public function test_documento_word_valido_pasa_validacion(): void
++    {
++        $validator = new EvidenceValidator;
++        $archivo = $this->archivo($this->empaquetar($this->partesDocx()), 'informe.docx');
++
++        $resultado = $validator->validate($archivo);
++
++        $this->assertSame('docx', $resultado['extension']);
++        $this->assertSame('informe.docx', $resultado['original_name']);
++        $this->assertStringStartsWith('application/vnd.openxmlformats-officedocument', $resultado['mime']);
++    }
++
++    public function test_hoja_de_calculo_valida_pasa_validacion(): void
++    {
++        $validator = new EvidenceValidator;
++        $archivo = $this->archivo($this->empaquetar($this->partesXlsx()), 'datos.xlsx');
++
++        $resultado = $validator->validate($archivo);
++
++        $this->assertSame('xlsx', $resultado['extension']);
++        $this->assertSame('datos.xlsx', $resultado['original_name']);
++    }
++
++    public function test_zip_generico_sin_estructura_ooxml_es_rechazado_como_docx(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++        $contenido = $this->empaquetar(['readme.txt' => 'hola mundo']);
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo($contenido, 'falso.docx'));
++    }
++
++    public function test_archivo_corrupto_es_rechazado(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo('no es un zip valido', 'corrupto.docx'));
++    }
++
++    public function test_extension_cruzada_estructura_xlsx_con_nombre_docx_es_rechazada(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo($this->empaquetar($this->partesXlsx()), 'falso.docx'));
++    }
++
++    public function test_docx_sin_parte_principal_es_rechazado(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++        $validator = new EvidenceValidator;
++        $partes = $this->partesDocx();
++        unset($partes['word/document.xml']);
++        $validator->validate($this->archivo($this->empaquetar($partes), 'incompleto.docx'));
++    }
++
++    public function test_pdf_jpg_png_siguen_validandose_por_magia_de_bytes(): void
++    {
++        $validator = new EvidenceValidator;
++
++        $pdf = $this->archivo("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<< /Size 2 /Root 1 0 R >>\nstartxref\n56\n%%EOF", 'documento.pdf');
++        $this->assertSame('pdf', $validator->validate($pdf)['extension']);
++
++        $jpg = $this->archivo("\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xFF\xD9", 'foto.jpg');
++        $this->assertSame('jpg', $validator->validate($jpg)['extension']);
++
++        $png = $this->archivo("\x89PNG\r\n\x1A\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89", 'imagen.png');
++        $this->assertSame('png', $validator->validate($png)['extension']);
++    }
++
++    public function test_paquete_con_demasiadas_entradas_es_rechazado(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++        $partes = [];
++        for ($i = 0; $i < 3001; $i++) {
++            $partes["archivo{$i}.txt"] = str_repeat('x', 100);
++        }
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo($this->empaquetar($partes), 'bomba.docx'));
++    }
++
++    public function test_content_types_xml_mal_formado_no_genera_500_se_rechaza_como_invalido(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++
++        $partes = $this->partesDocx();
++        // XML mal formado: etiqueta de cierre faltante en el Override.
++        $partes['[Content_Types].xml'] = '<Types>
++  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
++  <Default Extension="xml" ContentType="application/xml"/>
++  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
++</Types>';
++
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo($this->empaquetar($partes), 'malformado.docx'));
++    }
++
++    public function test_relacion_sin_tipo_office_document_correcto_es_rechazada(): void
++    {
++        $this->expectException(InvalidEvidence::class);
++
++        $partes = $this->partesDocx();
++        // La relación apunta a la parte principal pero su Type no es officeDocument.
++        $partes['_rels/.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
++  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata" Target="word/document.xml"/>
++</Relationships>';
++
++        $validator = new EvidenceValidator;
++        $validator->validate($this->archivo($this->empaquetar($partes), 'tipo-incorrecto.docx'));
++    }
++
++    private function partesDocx(): array
++    {
++        return [
++            '[Content_Types].xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
++  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
++  <Default Extension="xml" ContentType="application/xml"/>
++  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
++</Types>',
++            '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
++  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
++</Relationships>',
++            'word/document.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p></w:p></w:body></w:document>',
++        ];
++    }
++
++    private function partesXlsx(): array
++    {
++        return [
++            '[Content_Types].xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
++  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
++  <Default Extension="xml" ContentType="application/xml"/>
++  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
++</Types>',
++            '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
++  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
++</Relationships>',
++            'xl/workbook.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
++<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Hoja1" sheetId="1" state="visible"/></sheets></workbook>',
++        ];
++    }
++
++    private function empaquetar(array $partes): string
++    {
++        $ruta = tempnam(sys_get_temp_dir(), 'oxml_');
++        $zip = new \ZipArchive;
++        $zip->open($ruta, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
++        foreach ($partes as $nombre => $contenido) {
++            $zip->addFromString($nombre, $contenido);
++        }
++        $zip->close();
++
++        return file_get_contents($ruta);
++    }
++
++    private function archivo(string $contenido, string $nombre): UploadedFile
++    {
++        $ruta = tempnam(sys_get_temp_dir(), 'aris_');
++        file_put_contents($ruta, $contenido);
++
++        return new UploadedFile($ruta, $nombre, null, null, true);
++    }
++}
+
+diff --git a/tests/Feature/Submissions/SearchOptionalFiltersTest.php b/tests/Feature/Submissions/SearchOptionalFiltersTest.php
+index 0000000..9497920
+--- /dev/null
++++ b/tests/Feature/Submissions/SearchOptionalFiltersTest.php
+@@ -0,0 +1,59 @@
++<?php
++
++namespace Tests\Feature\Submissions;
++
++use App\Models\Institution;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\Support\AcademicScenario;
++use Tests\TestCase;
++
++/**
++ * P2.1: el buscador de entregas debe aceptar campos opcionales vacíos tal como los envían
++ * los formularios HTML reales, sin debilitar la validación de valores no vacíos.
++ */
++class SearchOptionalFiltersTest extends TestCase
++{
++    use AcademicScenario, RefreshDatabase;
++
++    private function urlConFiltros(array $filtros): string
++    {
++        return '/entregas/buscar?'.http_build_query($filtros);
++    }
++
++    public function test_todos_los_campos_opcionales_vacios_devuelven_200(): void
++    {
++        $institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $user = $this->member($institution, 'aprendiz');
++
++        $this->actingAs($user)->get($this->urlConFiltros([
++            'q' => '', 'estado' => '', 'ficha_id' => '', 'desde' => '', 'hasta' => '',
++        ]))->assertOk();
++    }
++
++    public function test_cada_campo_opcional_vacio_por_separado_es_aceptado(): void
++    {
++        $institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $user = $this->member($institution, 'aprendiz');
++
++        foreach ([
++            ['estado' => ''],
++            ['ficha_id' => ''],
++            ['desde' => ''],
++            ['hasta' => ''],
++            ['q' => ''],
++        ] as $filtro) {
++            $this->actingAs($user)->get($this->urlConFiltros($filtro))->assertOk();
++        }
++    }
++
++    public function test_filtro_por_ficha_combinado_con_campos_vacios_sigue_funcionando(): void
++    {
++        $institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $user = $this->member($institution, 'aprendiz');
++        $ficha = $this->ficha($institution);
++
++        $this->actingAs($user)->get($this->urlConFiltros([
++            'q' => '', 'estado' => '', 'ficha_id' => $ficha->id, 'desde' => '', 'hasta' => '',
++        ]))->assertOk();
++    }
++}
+
+diff --git a/tests/Feature/Submissions/SearchPerformanceTest.php b/tests/Feature/Submissions/SearchPerformanceTest.php
+index 0000000..331d17d
+--- /dev/null
++++ b/tests/Feature/Submissions/SearchPerformanceTest.php
+@@ -0,0 +1,85 @@
++<?php
++
++namespace Tests\Feature\Submissions;
++
++use App\Models\Institution;
++use App\Models\Project;
++use App\Models\Submission;
++use App\Models\SubmissionVersion;
++use App\Queries\SearchSubmissions;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Support\Facades\DB;
++use Tests\Support\AcademicScenario;
++use Tests\TestCase;
++
++/**
++ * P2.4: el buscador elimina consultas N+1 sobre versiones y conteos. Las versiones del
++ * proyecto se cargan con eager loading y la vista accede a la colección ya en memoria.
++ */
++class SearchPerformanceTest extends TestCase
++{
++    use AcademicScenario, RefreshDatabase;
++
++    public function test_acceso_a_versiones_de_resultados_no_genera_n_plus_1(): void
++    {
++        $institution = Institution::create(['name' => 'Institución', 'status' => 'activa']);
++        $admin = $this->member($institution, 'administrador');
++        $project = Project::create([
++            'institution_id' => $institution->id,
++            'code' => 'PROY',
++            'slug' => 'proy',
++            'title' => 'Proyecto',
++            'owner_id' => $admin->id,
++        ]);
++
++        $total = 8;
++        for ($i = 1; $i <= $total; $i++) {
++            $entrega = Submission::create([
++                'project_id' => $project->id,
++                'author_id' => $admin->id,
++                'title' => "Entrega $i",
++                'status' => 'borrador',
++            ]);
++            SubmissionVersion::create([
++                'submission_id' => $entrega->id,
++                'version_number' => 1,
++                'title' => "v1-$i",
++                'summary' => 'Resumen de prueba',
++                'content' => 'contenido',
++                'author_id' => $admin->id,
++                'checksum' => hash('sha256', 'contenido'),
++                'status' => 'borrador',
++            ]);
++            SubmissionVersion::create([
++                'submission_id' => $entrega->id,
++                'version_number' => 2,
++                'title' => "v2-$i",
++                'summary' => 'Resumen de prueba',
++                'content' => 'contenido',
++                'author_id' => $admin->id,
++                'checksum' => hash('sha256', 'contenido'),
++                'status' => 'borrador',
++            ]);
++        }
++
++        DB::enableQueryLog();
++        $resultados = app(SearchSubmissions::class)->forUser($admin, [])->get();
++        $consultasCarga = count(DB::getQueryLog());
++        DB::flushQueryLog();
++
++        foreach ($resultados as $entrega) {
++            // La vista solo necesita la última versión y el conteo, ya cargados.
++            $this->assertNotNull($entrega->latestVersion);
++            $this->assertSame(2, $entrega->versions_count);
++            $this->assertSame(2, $entrega->latestVersion->version_number);
++            $this->assertNotEmpty($entrega->project->title);
++        }
++        $consultasAcceso = count(DB::getQueryLog());
++
++        // La carga usa un número acotado de consultas (no una por entrega) y el acceso a
++        // relaciones precargadas no dispara consultas adicionales.
++        $this->assertLessThanOrEqual(6, $consultasCarga);
++        $this->assertSame(0, $consultasAcceso);
++        $this->assertSame($total, $resultados->count());
++    }
++}
+
+diff --git a/tests/Feature/Submissions/SearchPrivacyTest.php b/tests/Feature/Submissions/SearchPrivacyTest.php
+index 0000000..b777c3b
+--- /dev/null
++++ b/tests/Feature/Submissions/SearchPrivacyTest.php
+@@ -0,0 +1,187 @@
++<?php
++
++namespace Tests\Feature\Submissions;
++
++use App\Models\Activity;
++use App\Models\ActivityAssignment;
++use App\Models\ActivityVersion;
++use App\Models\Institution;
++use App\Models\InstitutionMembership;
++use App\Models\Project;
++use App\Models\ProjectMembership;
++use App\Models\Submission;
++use App\Models\User;
++use App\Queries\SearchSubmissions;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\Support\AcademicScenario;
++use Tests\TestCase;
++
++/**
++ * PI-002 / P1.1: el buscador no debe mostrar entregas solo porque el usuario tenga acceso
++ * al proyecto. El alcance autorizado se comparte con SubmissionVersionPolicy::view:
++ * el autor ve sus propias entregas; el personal institucional (administrador, instructor,
++ * evaluador con jurisdicción vigente) ve las entregas de sus proyectos.
++ */
++class SearchPrivacyTest extends TestCase
++{
++    use AcademicScenario, RefreshDatabase;
++
++    private Institution $institution;
++
++    private Project $project;
++
++    private User $admin;
++
++    private User $instructor;
++
++    private User $author;
++
++    private User $companero;
++
++    private User $otraInstitucion;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++
++        $this->institution = Institution::create(['name' => 'Institución de prueba', 'status' => 'activa']);
++        $this->admin = $this->member($this->institution, 'administrador');
++        $this->instructor = $this->member($this->institution, 'instructor');
++        $this->author = $this->member($this->institution, 'aprendiz');
++        $this->companero = $this->member($this->institution, 'aprendiz');
++        $this->otraInstitucion = $this->member(
++            Institution::create(['name' => 'Otra institución', 'status' => 'activa']),
++            'aprendiz'
++        );
++
++        $this->project = $this->project($this->ficha($this->institution), $this->admin);
++        $this->project->update(['status' => 'activo']);
++
++        // Todos son miembros del proyecto con rol aprendiz.
++        foreach ([$this->author, $this->companero] as $user) {
++            ProjectMembership::create([
++                'project_id' => $this->project->id,
++                'user_id' => $user->id,
++                'function' => 'aprendiz',
++                'assigned_at' => today(),
++            ]);
++        }
++        // El instructor es tutor del proyecto (personal institucional).
++        ProjectMembership::create([
++            'project_id' => $this->project->id,
++            'user_id' => $this->instructor->id,
++            'function' => 'instructor',
++            'assigned_at' => today(),
++        ]);
++
++        $actividad = Activity::create([
++            'project_id' => $this->project->id,
++            'code' => 'ACT',
++            'title' => 'Actividad',
++            'created_by' => $this->admin->id,
++        ]);
++        $version = ActivityVersion::create([
++            'activity_id' => $actividad->id,
++            'version_number' => 1,
++            'title' => 'Guía',
++            'content' => 'Contenido',
++            'author_id' => $this->admin->id,
++            'checksum' => hash('sha256', 'Contenido'),
++            'status' => 'publicada',
++            'published_at' => now(),
++        ]);
++        ActivityAssignment::create([
++            'activity_version_id' => $version->id,
++            'project_id' => $this->project->id,
++            'status' => 'activa',
++            'target_type' => 'proyecto',
++            'target_ref' => (string) $this->project->id,
++            'assigned_at' => now(),
++            'assigned_by' => $this->admin->id,
++        ]);
++
++        Submission::create([
++            'project_id' => $this->project->id,
++            'author_id' => $this->author->id,
++            'title' => 'Entrega del autor',
++            'status' => 'borrador',
++        ]);
++        Submission::create([
++            'project_id' => $this->project->id,
++            'author_id' => $this->companero->id,
++            'title' => 'Entrega del compañero',
++            'status' => 'borrador',
++        ]);
++    }
++
++    private function buscar(User $user): array
++    {
++        return app(SearchSubmissions::class)->forUser($user, [])
++            ->orderByDesc('id')
++            ->get()
++            ->map(fn ($entrega) => $entrega->title)
++            ->toArray();
++    }
++
++    public function test_el_autor_solo_ve_su_propia_entrega(): void
++    {
++        $this->assertSame(['Entrega del autor'], $this->buscar($this->author));
++    }
++
++    public function test_un_aprendiz_no_ve_la_entrega_del_companero_del_mismo_proyecto(): void
++    {
++        $this->assertSame(['Entrega del compañero'], $this->buscar($this->companero));
++        $this->assertNotContains('Entrega del autor', $this->buscar($this->companero));
++    }
++
++    public function test_el_instructor_ve_las_entregas_de_su_proyecto(): void
++    {
++        $resultados = $this->buscar($this->instructor);
++        $this->assertContains('Entrega del autor', $resultados);
++        $this->assertContains('Entrega del compañero', $resultados);
++    }
++
++    public function test_el_administrador_ve_las_entregas_de_su_institucion(): void
++    {
++        $resultados = $this->buscar($this->admin);
++        $this->assertContains('Entrega del autor', $resultados);
++        $this->assertContains('Entrega del compañero', $resultados);
++    }
++
++    public function test_un_aprendiz_de_otra_institucion_no_ve_nada(): void
++    {
++        $this->assertSame([], $this->buscar($this->otraInstitucion));
++    }
++
++    public function test_un_miembro_sin_rol_institucional_no_ve_entregas_ajenas(): void
++    {
++        $sinRol = User::factory()->create();
++        InstitutionMembership::create([
++            'institution_id' => $this->institution->id,
++            'user_id' => $sinRol->id,
++            'joined_at' => today(),
++        ]);
++        ProjectMembership::create([
++            'project_id' => $this->project->id,
++            'user_id' => $sinRol->id,
++            'function' => 'aprendiz',
++            'assigned_at' => today(),
++        ]);
++
++        $this->assertSame([], $this->buscar($sinRol));
++    }
++
++    public function test_autor_con_membresia_expirada_no_ve_entregas_via_http(): void
++    {
++        // El autor tiene una entrega en el proyecto (creada en setUp).
++        // Expirar su membresía de aprendiz en el proyecto.
++        ProjectMembership::where('user_id', $this->author->id)
++            ->where('project_id', $this->project->id)
++            ->update(['ended_at' => today()->subDay()]);
++
++        $respuesta = $this->actingAs($this->author)->get(route('entregas.buscar'));
++
++        $respuesta->assertOk();
++        $respuesta->assertDontSee('Entrega del autor');
++    }
++}

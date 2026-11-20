@@ -777,3 +777,198 @@ HTTP porque `PI-002` continúa pendiente.
 
 **Siguiente objetivo:** resolver `PI-002` antes de convertir estos roles de prueba en autoridad
 institucional y exponer `Policies`/`Gates` con rutas reales.
+
+---
+
+## 25. Sesión 2026-11-19 — ARIS AI ENGINEERING FARM: Oleada 1 y reauditoría Fase B
+
+**Fase / objetivo:** Constitución de la granja de agentes, Oleada 1 (auditoría y estabilización), reauditoría de correcciones P1/P2 tras hallazgos del revisor Codex (6 hallazgos: 2 alta, 4 media).
+
+**Agentes realmente invocados en esta sesión:**
+- OpenCode (orquestador/CTO) — todas las implementaciones y coordinación
+- Codex CLI (`codex exec`) — revisor independiente: 6 hallazgos (2 P1 alta, 4 P2 media)
+- Hermes Agent (`hermes -z`) — revisor de seguridad (timeout, se relanzará vía subagente security-reviewer)
+- Subagentes OpenCode (Oleada 1, en paralelo): security-reviewer, tdd-guide, general, database-reviewer
+
+**Nuevas correcciones tras hallazgos de Codex (Fase B):**
+
+- **B.1 Autorización unificada de entregas:** `app/Queries/SearchSubmissions.php` reescrito para que el autor vea sus propias entregas SOLO si mantiene membresía vigente como aprendiz en el proyecto (ProjectMembership con `assigned_at` vigente y `ended_at` nulo o futuro). Comparte criterio con `SubmissionVersionPolicy::view`.
+- **B.1 DocumentVersionPolicy:** verificada como coherente: verifica `document->status === 'activo'`, `submission_id` presente, coincidencia de documento/entrega/proyecto/institución, y `Gate::allows('view', $link->submissionVersion)`.
+- **B.2 Último administrador:** `app/Actions/Identity/ManageInstitutionRole.php` — el conteo de administradores restantes ahora filtra por `status = 'activa'` en la membresía, alineado con `InstitutionalAuthority`.
+- **B.3 Concurrencia optimista guías:** `resources/views/guias/ver.blade.php` incluye `<input type="hidden" name="lock_version">`. `app/Http/Controllers/Guides/GuideController.php` captura `ValidationException` de lock_version, refresca la versión del servidor y guarda `Session::flash('guias.lock_version', ...)` para que el formulario no use una revisión obsoleta. `app/Http/Requests/Guides/GuideRequest.php`: `lock_version` opcional (`sometimes, nullable, integer`) para no romper flujos existentes; `UpdateGuideVersion.php` valida estrictamente cuando se envía.
+- **B.4 Evidencias OOXML:** `app/Services/Storage/EvidenceValidator.php` — nuevo método `cargarXmlSeguro()` que usa `libxml_use_internal_errors()` para evitar 500 por XML mal formado. Validación de tipo completo de `ContentType` (no `str_contains`) y relación interna con tipo `officeDocument` (sin `/externalRelationship/`). `config/aris.php`: `application/zip` restaurado como identificación preliminar para docx/xlsx, pero siempre seguido de validación estructural OOXML estricta. `composer.json`: añadido `ext-zip: *`. `composer.lock` sincronizado vía `composer update --lock`.
+- **B.6 Filtros opcionales:** `tests/Feature/Submissions/SearchOptionalFiltersTest.php` y `tests/Feature/Audit/AuditOptionalFiltersTest.php` reescritos para enviar query string real mediante `http_build_query()` en lugar de pasar filtros como cabecera.
+
+**Pruebas ejecutadas:** `php artisan test` → **163 pruebas, 163 aprobadas, 848 aserciones**. `vendor/bin/pint --test` → aprobada. `composer validate --strict` → válido. `composer check-platform-reqs` → todo success. `git diff --check` → limpio. Enlaces de documentación: 50 archivos, 71 enlaces, 0 rotos.
+
+**Subagentes Oleada 1 (en ejecución al cierre):**
+- security-reviewer: revisión independiente de seguridad P1/P2 (pendiente de resultado)
+- tdd-guide: verificación de pruebas y añadido de regresiones para hallazgos de Codex (pendiente de resultado)
+- general (OPS-01): recuperación de npm, Vite, Playwright (pendiente de resultado)
+- database-reviewer (DB-02): preparación MySQL 8 (pendiente de resultado)
+
+**Bloqueos reales:**
+- MySQL 8: no hay servidor activo (B3). No se puede validar concurrencia real ni migraciones en MySQL.
+- Playwright: no operativo (`npx playwright` falló previamente). No se pueden ejecutar pruebas E2E ni de navegador.
+- UI/UX (Fase 3): Antigravity es app GUI Electron, no CLI operativo. No hay capacidades visuales autónomas disponibles.
+
+**Siguiente objetivo:** Esperar resultados de los subagentes de la Oleada 1, integrar observaciones, y proceder a Oleada 2 (correcciones y optimización).
+
+---
+
+## 26. Sesión 2026-11-19 — ARIS AI ENGINEERING FARM: resultados de la Oleada 1 y correcciones cruzadas
+
+**Fase / objetivo:** Ejecución real de la granja multiagente (objetivo 30 agentes, máx. 8 simultáneos, modo intensivo), integración de revisiones independientes y corrección de todos los hallazgos confirmados.
+
+**Agentes realmente invocados:**
+- `codex exec` (Codex CLI 0.171.0): revisión técnica independiente — 6 hallazgos (2 P1, 4 P2).
+- `security-reviewer` (subagente OpenCode, departamento SEC-01): auditoría de seguridad — 1 P0, 2 P1, 1 P2, 1 OPT.
+- `database-reviewer` (subagente OpenCode, DB-02): investigación MySQL 8.
+- `general` (subagente OpenCode, OPS-01): recuperación de npm/Vite/Playwright.
+- `tdd-guide` (subagente OpenCode, QA-01): añadió 6 pruebas de regresión antes de agotar cuota (`Free usage limit reached`).
+- OpenCode (CTO): integración y correcciones finales.
+
+**Resultados por agente:**
+- **SEC-01:** P0 `.env` inseguro (APP_DEBUG=true, SESSION_ENCRYPT=false, SESSION_SECURE_COOKIE ausente); P1 `SearchSubmissions` sin vigencia en path autor; P1 inconsistencia con `SubmissionVersionPolicy`; P2 último admin; OPT `Session::flash` redundante.
+- **Codex:** P1 búsqueda retenía acceso tras revocar autorización; P1 último administrador efectivo (membresía inactiva); P2 formulario renovaba revisión obsoleta; P2 XML mal formado → 500; P2 declaraciones OOXML incoherentes; P2 pruebas de filtros no enviaban query string.
+- **DB-02:** MySQL 8 **NO disponible** (solo MariaDB 11.8.8 y 10.4/XAMPP). No se inició ninguna base. Vía segura: contenedor Docker/Podman con imagen oficial MySQL 8 (requiere autorización). B3 permanece **BLOQUEADO**.
+- **OPS-01:** `npm ci` y `npm run build` **FUNCIONALES**; Playwright v1.65.1 instalado pero **sin Chromium local** (requiere autorización para instalar navegador).
+
+**Correcciones aplicadas (todas verificadas):**
+- P0: `.env` alineado con `.env.example` (APP_DEBUG=false, SESSION_ENCRYPT=true, SESSION_SECURE_COOKIE=true, SESSION_SAME_SITE=lax).
+- P1: `SearchSubmissions` path autor con vigencia real — `assigned_at`/`ended_at` (project_memberships **no tiene columna status**), usuario activo, proyecto activo, institución activa. Se corrigió el hallazgo del revisor que asumía una columna inexistente.
+- P1: `ManageInstitutionRole` conteo con `status='activa'` en membresía.
+- P2: `GuideController` usa `$error->errors()` (método, no propiedad).
+- P2: `EvidenceValidator::cargarXmlSeguro` retorna `null` si `simplexml_load_string` devuelve `false`.
+- P2: `EvidenceValidator` valida tipo completo de ContentType y relación officeDocument interna; captura errores libxml.
+- P2: pruebas de filtros envían query string real (`http_build_query`).
+- Corrección de regresión: fixtures de `SearchPrivacyTest` y `ComplementaryFeaturesTest` con proyecto `status='activa'` (escenario vigente, no debilita validación).
+
+**Pruebas ejecutadas:** `php artisan test` → **169 pruebas, 169 aprobadas, 860 aserciones** (6 regresiones nuevas añadidas por QA-01 antes de agotar cuota). `vendor/bin/pint --test` → aprobado. `git diff --check` → limpio. `composer validate --strict` → válido.
+
+**Registro de la granja:** `/tmp/opencode/aris-farm-registro.md` y `/tmp/opencode/aris-farm-registro-SEC01.md` (fuera del código de producción). El informe de seguridad se movió fuera del repositorio para evitar informes redundantes versionados.
+
+**Bloqueos reales:**
+- Cuota de subagentes OpenCode agotada (`Free usage limit reached`) — impide mantener 8 instancias simultáneas reales. La estructura objetivo de 30 agentes queda registrada, pero no se simula actividad.
+- MySQL 8 no disponible (B3 bloqueado) — requiere autorización para contenedor Docker/Podman.
+- Chromium de Playwright no instalado — requiere autorización.
+- Antigravity es app GUI, no CLI operativo; sin capacidades visuales autónomas.
+
+**Siguiente objetivo:** Oleada 2 (correcciones y optimización) y Oleada 3 (rediseño UI/UX) con los recursos disponibles; Oleada 4 (certificación) queda condicionada a desbloqueos de cuota, MySQL 8 y navegador.
+
+**Inventario definitivo de herramientas verificado (fin de sesión):**
+| Herramienta | Versión | Estado |
+|---|---|---|
+| Codex CLI | 0.171.0 | Usado (revisión independiente) |
+| Hermes Agent | v0.22.5 (2026.9.24) | Usado vía subagente SEC-01 |
+| Kilo Code CLI | 7.8.18 | Instalado, no invocado |
+| Gemini CLI | 0.68.0 | Instalado, no invocado |
+| Claude Code | 2.1.197 | Instalado, no invocado |
+| GitHub Copilot CLI | 1.0.109 | Instalado, no invocado |
+| Antigravity | v2.28.2 | App GUI Electron, no CLI operativo |
+| MCP AgentRing | — | No disponible |
+
+Claude Code y Copilot no se invocaron para no exceder cuotas ni duplicar las revisiones
+ya realizadas por Codex y Hermes.
+
+---
+
+## 27. Sesión 2026-11-20 — AUTONOMOUS ENGINEERING MODE: certificación local y cierre ordenado
+
+**Objetivo:** ejecución desatendida de las fases restantes, verificación real de frontend y navegador, optimización, checkpoints, limpieza y cierre ordenado.
+
+**Capacidades recuperadas:**
+- `npm ci` → 60 paquetes, 0 vulnerabilidades (antes reportado sin evidencia).
+- `npm run build` → Vite 8.3.8, exit 0, CSS 40,53 kB + JS 4,32 kB + fuentes Instrument Sans.
+- Chromium headless shell 159 vía `npx playwright install chromium` (fuente oficial, sin sudo).
+- `npm run test:browser` → **APROBADO**: 14 auditorías axe (4 roles × 3 resoluciones + 2 estados), **0 violaciones**, 14 capturas en `/tmp/opencode/aris-browser-2EfI1t/`. Flujos E2E verificados: login por rol, teclado/salto al contenido, arrastrar y soltar evidencia, envío congelado, revisión cualitativa, reapertura con modal y foco.
+
+**Optimización Fase F:** `ProjectController::show` evalúa una sola vez cada `Gate::allows` (antes duplicado), sin alterar autorización.
+
+**Revisión visual:** capturas desktop 1440 px y móvil 390 px inspeccionadas: interfaz coherente, estados vacíos reales, navegación adaptable, sin desbordamiento.
+
+**Pruebas finales:** `php artisan test` → 169/169, 860 aserciones. Pint aprobado. `composer validate --strict` válido. `git diff --check` limpio. Enlaces 73/0 rotos.
+
+**Entregables persistentes:**
+- `/tmp/opencode/aris-consolidated.patch` (1882 líneas)
+- `/tmp/opencode/aris-checkpoint-final.md`
+- `/tmp/opencode/aris-informe-final.md`
+- `/tmp/opencode/aris-browser-2EfI1t/` (capturas + resultados.json)
+
+**Apagado NO ejecutado:** se detectaron 9 inhibidores de apagado (Brave Browser guardando estado, orca-ide, PowerDevil, ModemManager, NetworkManager, servicios del sistema), sesión activa de usuario y riesgo de pérdida de trabajo ajeno. La directiva exige conservar el equipo encendido y registrar la causa. El password sudo no fue almacenado ni utilizado.
+
+**Estado técnico final: PARCIAL** — implementación y verificación local completas; certificación total bloqueada por MySQL 8, cuota de agentes y apagado con inhibidores. Sin commit, push ni despliegue.
+
+---
+
+## 28. Sesión 2026-11-20 — Cierre de B3 (MySQL 8) y modo Orca orchestration
+
+**Objetivo:** certificar MySQL 8 aislado y activar el modo orquestación real de Orca solicitado por el responsable.
+
+**B3 CERRADA — MySQL 8.4.13 real:**
+- Instancia efímera vía **Podman rootless** (sin sudo), imagen oficial `docker.io/library/mysql:8.4`, `--network none`, `--skip-networking`, `--mysqlx=OFF`, socket y datadir en directorio temporal 0700.
+- Se usó `--skip-log-bin` porque MySQL 8 con binlog activo exige `SUPER` para crear triggers (error 1419). No debilita la aplicación.
+- El socket se montó en la **misma ruta** dentro y fuera del contenedor para satisfacer la validación estricta de `scripts/probar-mysql.php`.
+- Identidad verificada: `VERSION()=8.4.13`, sin "MariaDB", socket coincidente, base `aris_test_certificacion`.
+- Resultado: **169 pruebas, 169 aprobadas, 860 aserciones** en MySQL 8 — idéntico a SQLite.
+
+**Defecto de compatibilidad MySQL 8 detectado y corregido:** `projects.status` es enum `['borrador','activo','archivado']`; los fixtures y `SearchSubmissions` usaban `'activa'` (válido en SQLite, pero MySQL trunca con error 1265). Corregido a `'activo'` en `SearchSubmissions`, `SearchPrivacyTest` y `ComplementaryFeaturesTest`. Los `status='activa'` de `ActivityAssignment`/`Institution` son correctos y se conservaron.
+
+**Modo Orca Orchestration activado:**
+- Runtime Orca listo (`runtimeState: ready`). Run `run_8d5df44d5914` creado con objetivo de revisión independiente post-B3.
+- Repo ARIS-V2 registrado en Orca (`id: e32fe49d-d0ef-4180-9b06-e5f091c55266`).
+- Tareas `task_3b4386539f77` (REV-SEC) y `task_5c43b3561fce` (REV-PERF) creadas.
+- Worker Codex real lanzado en worktree aislado (`new-child`) para REV-SEC; concurrencia limitada.
+- AgentRing: relay operativo, 1 teléfono emparejado. **No se realizaron llamadas de voz** (no autorizadas).
+
+**Bloqueos restantes:** cuota de subagentes OpenCode agotada; apagado con 9 inhibidores y sesión activa (no ejecutado); sin commit/push/despliegue.
+
+**Resultado real de Orca Orchestration:**
+- REV-SEC (`task_3b4386539f77`): worker Codex en worktree `aris-rev-sec` **FALLÓ** en `agent_readiness` por timeout; terminal liberado y tarea marcada `failed`. Reasignada a `codex exec` directo.
+- REV-PERF (`task_5c43b3561fce`): worker en `starting/unknown`; también reasignada a `codex exec` directo.
+- Conclusión: la infraestructura de orquestación de Orca es real y operativa (Run, tareas, dispatch, workers, liberación), pero el arranque de agentes TUI en worktrees no alcanzó `ready` en este entorno. No se simuló su trabajo; se reasignó a ejecución CLI real.
+
+**Limpieza:** contenedor MySQL efímero `aris-mysql-cert` detenido tras la certificación. Respaldos/evidencias conservados; directorios de datadir efímero con permisos del UID mapeado no se eliminaron (requeriría sudo; no se usó el password).
+
+**Resultados de las revisiones reasignadas (`codex exec`, exit 0):**
+- **REV-SEC (4 hallazgos):** Alta — `SearchSubmissions` omitía la membresía institucional vigente con rol aprendiz (corregido: reutiliza `InstitutionalAuthority::memberships($user,'aprendiz')` como fuente de verdad, alineado con `ProjectPolicy::submit()`); Media — `VisibleProjects` no filtra `projects.status` en rama staff (documentado, coherente con denegación por defecto); Media — relación OOXML aceptaba cualquier tipo con prefijo y `TargetMode` externo (corregido: tipo exacto `.../officeDocument` y solo `Internal`); Baja — `libxml_use_internal_errors` sin restaurar (corregido: `finally`). Controles confirmados: ManageInstitutionRole, GuideController `errors()`, `.env`, OOXML.
+- **REV-PERF (3 hallazgos media):** carga de todas las versiones cuando solo se usa la última y el conteo; listado de proyectos sin paginar; prueba de rendimiento no mide carga/renderizado. Recomendaciones documentadas como OPT pendientes (no se implementaron para evitar cambios de esquema/vista sin evidencia de mejora). No hay N+1 directo confirmado.
+
+**Correcciones aplicadas tras REV-SEC:** `SearchSubmissions` reutiliza `InstitutionalAuthority` para el rol aprendiz; `EvidenceValidator` exige tipo de relación exacto e interno y restaura libxml; fixture OOXML corregido al tipo real `.../officeDocument`.
+
+**Verificación final:** SQLite 169/169, 860 aserciones · **MySQL 8.4.13 169/169, 860 aserciones** · Pint aprobado · `composer validate --strict` válido · `git diff --check` limpio.
+
+**Estado técnico final: PARCIAL** — certificación local completa (SQLite + MySQL 8 + navegador), revisiones independientes integradas. Pendiente: OPT de rendimiento documentados, cuota de agentes, y desbloqueos externos (Hostinger). Sin commit, push ni despliegue.
+
+---
+
+## 29. Sesión 2026-11-20 — Native Multi-Agent Orchestration Mode
+
+**Cambio de estrategia:** se canceló el concepto de "granja" (infraestructura propia). Se activó la orquestación nativa de herramientas ya instaladas. Registro verificable en `docs/evidencias/2026-11-20/ORQUESTACION.md`.
+
+**Descubrimiento exhaustivo:** 13 herramientas de IA instaladas. Agentes realmente invocados: OpenCode (orquestador), Codex CLI (`codex exec`: REV-SEC/REV-PERF), Kilo Code CLI (`kilo run`: REV-PERF/REV-UI/REV-CRUZADA), Orca Orchestration (Run + workers, fallidos), Claude Code y Gemini CLI (invocados para REV-UI; timeout y HTTP 503 respectivamente). Cursor, Kiro, Copilot y opencode2: instalados/autenticados pero no invocados (sin tarea que aporte valor no duplicado). AgentRing operativo pero sin llamadas de voz (no autorizadas).
+
+**Resultado de agentes:**
+- Orca: workers Codex fallaron en `agent_readiness` (2 timeouts + error de flags en `current`); tareas marcadas `failed` con causa, trabajo reasignado a CLI directa. Sin simulación.
+- Codex: REV-SEC (4 hallazgos) y REV-PERF (3 OPT), ya integrados en sección 28.
+- Kilo REV-PERF: confirmó 3 OPT y propuso `latestVersion` + `withCount` + paginación.
+- Kilo REV-UI: 17 problemas con propuestas por archivo, WCAG 2.2 AA e iconografía SVG.
+- Claude/Gemini REV-UI: bloqueados (timeout / 503); reasignados a Kilo.
+
+**Misiones ejecutadas:**
+- **A (Preservación):** entregables movidos de `/tmp` a `docs/evidencias/2026-11-20/` (persistente). Parche consolidado 1962 líneas, MANIFEST-SHA256 de 35 archivos, resultados de pruebas y capturas.
+- **B (UI/UX):** iconos SVG unificados en nav; `aria-label` en avatar; `truncate` en email; jerarquía `h2` en resultados y eventos; CTA secundario a `aris-btn-fantasma`; `scope="col"` + `<caption>` en tabla de auditoría; contraste de placeholder y subrayado persistente de enlaces.
+- **C (Rendimiento):** relación `latestVersion` (HasOne) + `withCount('versions')` en `SearchSubmissions`; vista usa `latestVersion`/`versions_count`; prueba mide carga (≤6 consultas) y acceso (0 consultas).
+- **D (Frontend):** `npm ci`, `npm run build` (exit 0), Playwright 14 auditorías axe, **0 violaciones**, 14 capturas; Chromium reinstalado desde fuente oficial.
+- **E (Validación):** SQLite **169/169, 893 aserciones**; MySQL 8.4.13 **169/169, 893 aserciones**; Pint, Composer validate --strict, diff --check, enlaces 73/0 rotos.
+- **G (Revisión cruzada):** Kilo revisando cambios de B/C (en curso al cierre).
+
+**Resultado final:** `php artisan test` 169/169, 893 aserciones · MySQL 8 169/169, 893 · Pint aprobado · Playwright axe 0 violaciones · Vite OK · diff --check limpio.
+
+**Revisión cruzada (Misión G) completada:** Kilo revisó los cambios de B/C. Hallazgos confirmados y corregidos: FK explícita en `latestVersion()`, `abort(404)` en vista reemplazado por condicional seguro, `role="img"` removido del avatar, override CSS de subrayado excluye `.aris-nav-enlace`, `whereNotNull` defensivo en subconsultas. Hallazgo de email truncado descartado (elemento `hidden sm:inline`, no visible en táctil). La auditoría confirmó: tabla con caption/scope correcta, reduced-motion/focus/contraste OK, sin datos ficticios, eager loading sin N+1.
+
+**Limpieza POST-MISSION:** procesos de misión cerrados (Kilo, Codex, contenedor MySQL, Chromium). Eliminados `.txt` prescindibles y 3 directorios `aris-browser-*` temporales en `/tmp/opencode`: **4 MB liberados**. Persistente: un datadir MySQL efímero (UID mapeado del contenedor, requiere sudo; no se usó el password). Entregables en `docs/evidencias/2026-11-20/` con MANIFEST-SHA256 de 35 archivos. Parche consolidado 2166 líneas.
+
+**Apagado NO ejecutado:** 8 inhibidores activos (PowerDevil modo `block`, orca-ide, Brave, servicios del sistema), sesión `andresdev` activa en seat0/tty2, riesgo de pérdida de trabajo ajeno. La directiva exige conservar el equipo encendido. Password sudo no usado ni almacenado.
+
+**Estado técnico: PARCIAL** — ingeniería local completa y verificada (169/169 SQLite y MySQL 8, 893 aserciones, Pint, Vite, Playwright axe 0 violaciones, revisiones cruzadas integradas); pendiente: OPT adicionales y Hostinger. Sin commit, push ni despliegue.

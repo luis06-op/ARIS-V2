@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ActivityVersion extends Model
 {
     protected $fillable = [
-        'activity_id', 'version_number', 'title', 'content', 'author_id', 'checksum',
+        'activity_id', 'version_number', 'lock_version', 'title', 'content', 'author_id', 'checksum',
         'status', 'published_at',
     ];
 

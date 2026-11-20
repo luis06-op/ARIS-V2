@@ -1,0 +1,58 @@
+[
+  {
+    "name": "aprendiz-390",
+    "violations": []
+  },
+  {
+    "name": "aprendiz-768",
+    "violations": []
+  },
+  {
+    "name": "aprendiz-1440",
+    "violations": []
+  },
+  {
+    "name": "instructor-390",
+    "violations": []
+  },
+  {
+    "name": "instructor-768",
+    "violations": []
+  },
+  {
+    "name": "instructor-1440",
+    "violations": []
+  },
+  {
+    "name": "evaluador-390",
+    "violations": []
+  },
+  {
+    "name": "evaluador-768",
+    "violations": []
+  },
+  {
+    "name": "evaluador-1440",
+    "violations": []
+  },
+  {
+    "name": "administrador-390",
+    "violations": []
+  },
+  {
+    "name": "administrador-768",
+    "violations": []
+  },
+  {
+    "name": "administrador-1440",
+    "violations": []
+  },
+  {
+    "name": "aprendiz-congelado",
+    "violations": []
+  },
+  {
+    "name": "reapertura-dialogo",
+    "violations": []
+  }
+]
