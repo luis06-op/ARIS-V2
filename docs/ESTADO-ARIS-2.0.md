@@ -972,3 +972,19 @@ ya realizadas por Codex y Hermes.
 **Apagado NO ejecutado:** 8 inhibidores activos (PowerDevil modo `block`, orca-ide, Brave, servicios del sistema), sesión `andresdev` activa en seat0/tty2, riesgo de pérdida de trabajo ajeno. La directiva exige conservar el equipo encendido. Password sudo no usado ni almacenado.
 
 **Estado técnico: PARCIAL** — ingeniería local completa y verificada (169/169 SQLite y MySQL 8, 893 aserciones, Pint, Vite, Playwright axe 0 violaciones, revisiones cruzadas integradas); pendiente: OPT adicionales y Hostinger. Sin commit, push ni despliegue.
+
+---
+
+## 30. Sesión 2026-11-20 — Publicación autorizada de los cambios
+
+**Autorización:** el responsable autorizó expresamente subir los cambios al repositorio (anulando la restricción previa de "sin commits/push").
+
+**Commit publicado:**
+- `b315d11cc942cb22a57fb262d4e4c93cf30a606f` — `feat: corregir P1/P2, optimizar buscador y mejorar UI/UX accesible`
+- 69 archivos incluidos (23 modificados + 46 nuevos), entre ellos el parche consolidado, el MANIFEST-SHA256 de 35 evidencias, los resultados de pruebas SQLite/MySQL 8, build Vite, Playwright (14 capturas) y los informes de revisión de los agentes.
+- Sin secretos verificados antes del commit; `.env` permanece gitignorado.
+- Identidad reutilizada del último autor del repositorio por comando, sin modificar configuración global de Git.
+
+**Push:** `origin/main` actualizado de `2913b8c` a `b315d11`. Verificado: HEAD local = HEAD remoto, árbol limpio (`## main...origin/main`).
+
+**Estado técnico final:** **PARCIAL** — ingeniería local completa y verificada, cambios publicados en `origin/main`. Pendiente únicamente: OPT adicionales de rendimiento y preparación Hostinger. Sin despliegue.
